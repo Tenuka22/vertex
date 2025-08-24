@@ -1,22 +1,28 @@
-import { env } from 'cloudflare:workers';
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
-import { db } from '../db';
+import { openAPI } from 'better-auth/plugins';
+import { drizzle } from 'drizzle-orm/node-postgres';
 // biome-ignore lint/performance/noNamespaceImport: Drizzle Rule
 import * as schema from '../db/schema/auth';
 
 export const auth = betterAuth({
-  database: drizzleAdapter(db, {
-    provider: 'sqlite',
+  database: drizzleAdapter(drizzle(process.env.DATABASE_URL), {
+    provider: 'pg',
 
     schema,
   }),
-  trustedOrigins: [env.CORS_ORIGIN],
+  trustedOrigins: [process.env.CORS_ORIGIN],
   emailAndPassword: {
     enabled: true,
   },
-  secret: env.BETTER_AUTH_SECRET,
-  baseURL: env.BETTER_AUTH_URL,
+  socialProviders: {
+    google: {
+      clientId: process.env.GOOGLE_CLIENT_ID as string,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
+    },
+  },
+  secret: process.env.BETTER_AUTH_SECRET,
+  baseURL: process.env.BETTER_AUTH_URL,
   advanced: {
     defaultCookieAttributes: {
       sameSite: 'none',
@@ -24,4 +30,9 @@ export const auth = betterAuth({
       httpOnly: true,
     },
   },
+  plugins: [
+    openAPI({
+      path: '/docs',
+    }),
+  ],
 });

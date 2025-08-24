@@ -21,6 +21,8 @@
       "!**/.source"
     ]
   },
-  "linter": { "includes": ["**", "!**/worker-configuration.d.ts"] },
+  "linter": {
+    "includes": ["**", "!**/worker-configuration.d.ts", "!**/components/ui/*"]
+  },
   "extends": ["ultracite"]
 }

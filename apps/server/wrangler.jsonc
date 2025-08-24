@@ -6,11 +6,4 @@
 	"vars": {
 		"NODE_ENV": "production"
 	},
-	"d1_databases": [
-    {
-      "binding": "DB",
-      "database_name": "primary-db",
-      "database_id": "a3c20482-57d8-4ed9-b8d0-1e51e472812e"
-    }
-  ]
 }
