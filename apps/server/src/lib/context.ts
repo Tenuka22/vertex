@@ -1,12 +1,13 @@
+import { env } from 'cloudflare:workers';
 import type { Context as HonoContext } from 'hono';
-import { auth } from './auth';
+import { authClient } from './auth-client';
 
 export type CreateContextOptions = {
   context: HonoContext;
 };
 
 export async function createContext({ context }: CreateContextOptions) {
-  const session = await auth.api.getSession({
+  const session = await authClient({ ...env }).api.getSession({
     headers: context.req.raw.headers,
   });
   return {

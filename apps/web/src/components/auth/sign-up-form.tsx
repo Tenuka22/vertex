@@ -3,7 +3,7 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { authClient } from '@/lib/auth-client';
 import { H3, Muted, P } from '../design/typography';
-import Loader from '../global/loader';
+import { Loader } from '../global/loader';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardHeader } from '../ui/card';
 import { Input } from '../ui/input';
@@ -35,8 +35,8 @@ export const SignUpForm = ({
         },
         {
           onSuccess: () => {
-            router.push('/');
             toast.success('Sign up successful');
+            router.push('/');
           },
           onError: (error) => {
             toast.error(error.error.message || error.error.statusText);
@@ -50,7 +50,11 @@ export const SignUpForm = ({
   });
 
   if (isPending) {
-    return <Loader />;
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <Loader />
+      </div>
+    );
   }
 
   return (
@@ -176,9 +180,13 @@ export const SignUpForm = ({
                   disabled={!state.canSubmit || state.isSubmitting}
                   type="submit"
                 >
-                  {state.isSubmitting
-                    ? 'Creating Account...'
-                    : 'Create Account'}
+                  {state.isSubmitting ? (
+                    <div className="flex items-center gap-2">
+                      <Loader /> Creating Account...
+                    </div>
+                  ) : (
+                    'Create Account'
+                  )}
                 </Button>
               )}
             </form.Subscribe>
