@@ -3,7 +3,7 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { authClient } from '@/lib/auth-client';
 import { H3, Muted, P } from '../design/typography';
-import Loader from '../global/loader';
+import { Loader } from '../global/loader';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardHeader } from '../ui/card';
 import { Input } from '../ui/input';
@@ -18,7 +18,7 @@ export const SignInForm = ({
   onSwitchToSignUp: () => void;
 }) => {
   const router = useRouter();
-  const { isPending } = authClient.useSession();
+  const { isPending: sessionLoading } = authClient.useSession();
 
   const form = useForm({
     defaultValues: {
@@ -33,8 +33,8 @@ export const SignInForm = ({
         },
         {
           onSuccess: () => {
-            router.push('/');
             toast.success('Sign in successful');
+            router.push('/');
           },
           onError: (error) => {
             toast.error(error.error.message || error.error.statusText);
@@ -47,8 +47,12 @@ export const SignInForm = ({
     },
   });
 
-  if (isPending) {
-    return <Loader />;
+  if (sessionLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <Loader />
+      </div>
+    );
   }
 
   return (
@@ -152,7 +156,13 @@ export const SignInForm = ({
                   disabled={!state.canSubmit || state.isSubmitting}
                   type="submit"
                 >
-                  {state.isSubmitting ? 'Signing in...' : 'Sign In'}
+                  {state.isSubmitting ? (
+                    <div className="flex items-center gap-2">
+                      <Loader /> Signing in...
+                    </div>
+                  ) : (
+                    'Sign In'
+                  )}
                 </Button>
               )}
             </form.Subscribe>
