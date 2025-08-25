@@ -8,6 +8,7 @@ import {
   uuid,
   varchar,
 } from 'drizzle-orm/pg-core';
+import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 
 export const businessProfile = pgTable('business_profile', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -142,3 +143,6 @@ export type NewBusinessContact = typeof businessContacts.$inferInsert;
 
 export type BusinessLocation = typeof businessLocations.$inferSelect;
 export type NewBusinessLocation = typeof businessLocations.$inferInsert;
+
+export const businessProfileInsertSchema = createInsertSchema(businessProfile);
+export const businessProfileSelectSchema = createSelectSchema(businessProfile);
