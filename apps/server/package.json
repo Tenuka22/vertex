@@ -14,24 +14,24 @@
     "db:studio": "drizzle-kit studio",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "auth:generate": "bunx @better-auth/cli generate --config='./src/lib/auth.ts' --output='./src/db/schema/auth.ts'"
+    "auth:generate": "bunx @better-auth/cli generate --config='./src/lib/auth.ts' --output='../../packages/db/src/schema/auth.ts'"
   },
   "dependencies": {
     "@libsql/client": "^0.15.9",
-    "@orpc/client": "^1.5.0",
+    "@repo/router": "workspace:*",
+    "@repo/db": "workspace:*",
     "@orpc/server": "^1.5.0",
     "better-auth": "^1.3.4",
     "dotenv": "^17.2.1",
-    "drizzle-orm": "^0.44.4",
     "hono": "^4.8.2",
     "pg": "^8.16.3",
     "zod": "^4.0.2"
   },
   "devDependencies": {
+    "drizzle-kit": "^0.31.2",
     "@better-auth/cli": "^1.3.7",
     "@types/node": "^22.13.11",
     "@types/pg": "^8.15.5",
-    "drizzle-kit": "^0.31.4",
     "tsdown": "^0.12.9",
     "typescript": "^5.8.2",
     "wrangler": "^4.23.0"

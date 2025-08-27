@@ -1,0 +1,21 @@
+{
+  "name": "@repo/router",
+  "type": "module",
+  "private": true,
+  "exports": {
+    "./*":  "./src/*.ts"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@orpc/client": "^1.8.5",
+    "@repo/db": "workspace:*",
+    "@orpc/server": "^1.8.5",
+    "drizzle-orm": "^0.44.5",
+    "zod": "^4.1.3"
+  }
+}

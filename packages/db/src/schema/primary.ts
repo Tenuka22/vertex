@@ -8,9 +8,15 @@ import {
   uuid,
   varchar,
 } from 'drizzle-orm/pg-core';
+import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
+import { user } from './auth';
+export * from './auth'
 
 export const businessProfile = pgTable('business_profile', {
   id: uuid('id').primaryKey().defaultRandom(),
+  userId: text('userId')
+    .notNull()
+    .references(() => user.id),
 
   companyName: varchar('company_name', { length: 255 }).notNull(),
   legalName: varchar('legal_name', { length: 255 }),
@@ -132,6 +138,8 @@ export const businessLocations = pgTable('business_locations', {
 });
 
 export type BusinessProfile = typeof businessProfile.$inferSelect;
+export const BusinessProfileSelect = createSelectSchema(businessProfile);
+export const BusinessProfileInsert = createInsertSchema(businessProfile);
 export type NewBusinessProfile = typeof businessProfile.$inferInsert;
 
 export type BusinessInformation = typeof businessInformation.$inferSelect;
@@ -142,3 +150,6 @@ export type NewBusinessContact = typeof businessContacts.$inferInsert;
 
 export type BusinessLocation = typeof businessLocations.$inferSelect;
 export type NewBusinessLocation = typeof businessLocations.$inferInsert;
+
+export const businessProfileInsertSchema = createInsertSchema(businessProfile);
+export const businessProfileSelectSchema = createSelectSchema(businessProfile);
