@@ -1,5 +1,4 @@
-'use client';
-
+import { format } from 'date-fns';
 import {
   Activity,
   Building2,
@@ -29,46 +28,8 @@ import {
 } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
+import { orpc } from '@/utils/orpc';
 import type { BusinessProfile } from '../../../../../../../server/src/db/schema/primary';
-
-const business: BusinessProfile = {
-  id: '1',
-  companyName: 'Vertex Innovations',
-  legalName: 'Vertex Innovations LLC',
-  tradingName: 'Vertex Tech',
-  email: 'contact@vertex.io',
-  phone: '+1-415-555-1234',
-  website: 'https://vertex.io',
-  addressLine1: '123 Market Street',
-  addressLine2: 'Suite 500',
-  city: 'San Francisco',
-  state: 'California',
-  postalCode: '94103',
-  country: 'United States',
-  industry: 'Technology',
-  businessType: 'LLC',
-  employeeCount: 150,
-  foundedYear: 2020,
-  logoUrl: 'https://picsum.photos/200/200',
-  brandColor: '#1E90FF',
-  description:
-    'Innovative solutions for modern businesses, specializing in cutting-edge technology and digital transformation.',
-  mission:
-    'To empower businesses with innovative technology solutions that drive growth and efficiency.',
-  vision:
-    'To be the leading technology partner for businesses worldwide, creating a more connected and efficient future.',
-  isActive: true,
-  isVerified: true,
-  createdAt: new Date('2020-01-15'),
-  updatedAt: new Date('2024-12-01'),
-};
-
-const formatDate = (date: Date) =>
-  new Intl.DateTimeFormat('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  }).format(date);
 
 const CompanyHeader = ({ data }: { data: BusinessProfile }) => (
   <Card>
@@ -334,36 +295,45 @@ const Timeline = ({ data }: { data: BusinessProfile }) => (
         <Label className="font-medium text-muted-foreground text-xs uppercase">
           Created
         </Label>
-        <p className="font-medium text-sm">{formatDate(data.createdAt)}</p>
+        <p className="font-medium text-sm">
+          {/*    {format(data.createdAt, 'dd/mm/yy')} */}
+        </p>
       </div>
       <Separator />
       <div>
         <Label className="font-medium text-muted-foreground text-xs uppercase">
           Last Updated
         </Label>
-        <p className="font-medium text-sm">{formatDate(data.updatedAt)}</p>
+        <p className="font-medium text-sm">
+          {/*   {format(data.updatedAt, 'dd/mm/yy')} */}
+        </p>
       </div>
     </CardContent>
   </Card>
 );
 
-const COMPANY_PAGE = () => (
-  <main className="space-y-8 p-6">
-    <CompanyHeader data={business} />
-    <div className="grid gap-4 lg:grid-cols-2">
-      <div className="space-y-6 xl:col-span-2">
-        <CompanyOverview data={business} />
-        <MissionVision data={business} />
-        <ContactCard data={business} />
-        <AddressCard data={business} />
-      </div>
-      <div className="space-y-6">
-        <BusinessProfileForm defaultData={business} />
-        <BrandSettings data={business} />
-        <Timeline data={business} />
-      </div>
-    </div>
-  </main>
-);
+const COMPANY_PAGE = async () => {
+  const business = await orpc.businessProfile.get.call({});
 
+  return (
+    <main className="space-y-8 p-6">
+      <CompanyHeader data={business} />
+      <div className="grid gap-4 lg:grid-cols-2">
+        <div className="space-y-6 xl:col-span-2">
+          <CompanyOverview data={business} />
+          <MissionVision data={business} />
+          <ContactCard data={business} />
+          <AddressCard data={business} />
+          <BrandSettings data={business} />
+          <Timeline data={business} />
+        </div>
+        <div className="relative h-full min-h-screen">
+          <div className="sticky top-4 space-y-6 pb-4">
+            <BusinessProfileForm defaultData={business} />
+          </div>
+        </div>
+      </div>
+    </main>
+  );
+};
 export default COMPANY_PAGE;

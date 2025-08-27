@@ -1,6 +1,12 @@
-import type { AnyRouter, RouterClient } from '@orpc/server';
+import type { AnyRouter } from '@orpc/server';
 import { publicProcedure } from '../lib/orpc';
-import { createUpdateBusinessProfile, getBusinessProfile } from './business';
+import {
+  createUpdateBusinessProfile,
+  deleteBusinessProfile,
+  getUserBusinessProfile,
+  reactivateBusinessProfile,
+  softDeleteBusinessProfile,
+} from './business';
 
 export const appRouter = {
   healthCheck: publicProcedure.handler(() => {
@@ -8,8 +14,11 @@ export const appRouter = {
   }),
   businessProfile: {
     createUpdate: createUpdateBusinessProfile,
-    select: getBusinessProfile,
+    get: getUserBusinessProfile,
+    delete: deleteBusinessProfile,
+    softDelete: softDeleteBusinessProfile,
+    reactivate: reactivateBusinessProfile,
   },
 } satisfies AnyRouter;
+
 export type AppRouter = typeof appRouter;
-export type AppRouterClient = RouterClient<typeof appRouter>;

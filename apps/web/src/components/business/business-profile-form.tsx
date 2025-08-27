@@ -1,10 +1,12 @@
 'use client';
 
+import { ORPCError } from '@orpc/client';
 import { type ReactFormExtendedApi, useForm } from '@tanstack/react-form';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import type { z } from 'zod';
+import { orpc } from '@/utils/orpc';
 import { businessProfileInsertSchema } from '../../../../server/src/db/schema/primary';
 import { Loader } from '../global/loader';
 import { Button } from '../ui/button';
@@ -326,6 +328,7 @@ export const BusinessProfileForm = <TDefaultData extends { id: string }>({
   const form = useForm({
     defaultValues: {
       companyName: '',
+      userId: '',
       email: '',
       phone: '',
       website: '',
@@ -342,8 +345,19 @@ export const BusinessProfileForm = <TDefaultData extends { id: string }>({
       ...defaultData,
     } satisfies FormValues as FormValues,
     validators: { onSubmit: businessProfileInsertSchema },
-    onSubmit: () => {
-      toast.success('Business profile created!');
+    onSubmit: async ({ value }) => {
+      try {
+        const serverReturn = await orpc.businessProfile.createUpdate.call({
+          businessData: value,
+        });
+        toast.success(`${serverReturn.companyName} Business profile created!`);
+      } catch (error) {
+        if (error instanceof ORPCError) {
+          toast.error(error.message);
+        } else {
+          toast.error('Creating or updating the business thorwed an error.');
+        }
+      }
     },
   });
 

@@ -9,9 +9,13 @@ import {
   varchar,
 } from 'drizzle-orm/pg-core';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
+import { user } from './auth';
 
 export const businessProfile = pgTable('business_profile', {
   id: uuid('id').primaryKey().defaultRandom(),
+  userId: text('userId')
+    .notNull()
+    .references(() => user.id),
 
   companyName: varchar('company_name', { length: 255 }).notNull(),
   legalName: varchar('legal_name', { length: 255 }),

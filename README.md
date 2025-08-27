@@ -12,7 +12,7 @@ This project was created with [Better-T-Stack](https://github.com/AmanVarshney01
 - **oRPC** - End-to-end type-safe APIs with OpenAPI integration
 - **workers** - Runtime environment
 - **Drizzle** - TypeScript-first ORM
-- **SQLite/Turso** - Database engine
+- **Postgres/Neon** - Database engine
 - **Authentication** - Email & password authentication with Better Auth
 - **Husky** - Git hooks for code quality
 
@@ -25,9 +25,9 @@ bun install
 ```
 ## Database Setup
 
-This project uses SQLite with Drizzle ORM.
+This project uses Postgres with Drizzle ORM.
 
-1. Start the local SQLite database:
+1. Start the local Postgres database:
 Local development for a Cloudflare D1 database will already be running as part of the `wrangler dev` command.
 
 2. Update your `.env` file in the `apps/server` directory with the appropriate connection details if needed.
@@ -67,4 +67,4 @@ vertex/
 - `bun check-types`: Check TypeScript types across all apps
 - `bun db:push`: Push schema changes to database
 - `bun db:studio`: Open database studio UI
-- `cd apps/server && bun db:local`: Start the local SQLite database
+- `cd apps/server && bun db:local`: Start the local Postgres database
