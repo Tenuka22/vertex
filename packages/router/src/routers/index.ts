@@ -1,5 +1,5 @@
 import type { AnyRouter } from '@orpc/server';
-import { publicProcedure } from '../lib/orpc';
+import { publicProcedure } from '../domain/orpc';
 import {
   createUpdateBusinessProfile,
   deleteBusinessProfile,

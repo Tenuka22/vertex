@@ -7,7 +7,6 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import type { z } from 'zod';
 import { orpc } from '@/utils/orpc';
-import { businessProfileInsertSchema } from '../../../../server/src/db/schema/primary';
 import { Loader } from '../global/loader';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardHeader } from '../ui/card';
@@ -24,6 +23,7 @@ import {
   StepperTrigger,
 } from '../ui/stepper';
 import { Textarea } from '../ui/textarea';
+import { businessProfileInsertSchema } from '@repo/db/schema/primary';
 
 type FormValues = z.infer<typeof businessProfileInsertSchema>;
 

@@ -29,7 +29,7 @@ import {
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { orpc } from '@/utils/orpc';
-import type { BusinessProfile } from '../../../../../../../server/src/db/schema/primary';
+import type { BusinessProfile } from '@repo/db/schema/primary';
 
 const CompanyHeader = ({ data }: { data: BusinessProfile }) => (
   <Card>
