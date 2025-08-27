@@ -18,7 +18,9 @@
     "db:generate": "bun run --filter server db:generate",
     "db:migrate": "bun run --filter server db:migrate"
   },
-  "dependencies": {},
+  "dependencies": {
+    "typescript": "^5.9.2"
+  },
   "devDependencies": {
     "@biomejs/biome": "^2.2.2",
     "ultracite": "5.2.4",
