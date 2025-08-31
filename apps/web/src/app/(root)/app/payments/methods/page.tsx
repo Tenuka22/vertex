@@ -1,5 +1,3 @@
-'use client';
-
 import type { PaymentMethod } from '@repo/db/schema/primary';
 import {
   Banknote,

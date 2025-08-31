@@ -3,11 +3,13 @@ import { pgEnum } from 'drizzle-orm/pg-core';
 export const expenseCategoryEnum = pgEnum('expenseCategoryEnum', [
   'VEHICLE',
   'HOUSING',
+  'SALES',
   'FOOD',
   'SHOPPING',
   'ENTERTAINMENT',
   'EDUCATION',
   'HEALTHCARE',
+  'SUPPLIES',
   'OPTIONAL',
 ]);
 

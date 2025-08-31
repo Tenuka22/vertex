@@ -1,3 +1,10 @@
+'use client';
+
+import type {
+  ExpenseCategory,
+  PaymentMethod,
+  Transaction,
+} from '@repo/db/schema/primary';
 import {
   ArrowDownCircle,
   ArrowUpCircle,
@@ -18,76 +25,107 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Separator } from '@/components/ui/separator';
 
+const transactions: Transaction[] = [
+  {
+    id: 't1',
+    businessProfileId: 'bp1',
+    type: 'PAYMENT',
+    amount: '1200',
+    description: 'Customer Payment - Order #1234',
+    paymentMethodId: 'pm1',
+    expenseCategoryId: 'ec1',
+    transactionDate: new Date('2025-08-29'),
+    reference: 'ORD1234',
+    createdAt: new Date('2025-08-29'),
+    updatedAt: new Date('2025-08-29'),
+  },
+  {
+    id: 't2',
+    businessProfileId: 'bp1',
+    type: 'PAYOUT',
+    amount: '320',
+    description: 'Supplier Payment - Global Supplies Inc.',
+    paymentMethodId: 'pm2',
+    expenseCategoryId: 'ec2',
+    transactionDate: new Date('2025-08-28'),
+    reference: 'SUP5678',
+    createdAt: new Date('2025-08-28'),
+    updatedAt: new Date('2025-08-28'),
+  },
+];
+
+const paymentMethods: Record<string, PaymentMethod> = {
+  pm1: {
+    id: 'pm1',
+    type: 'CARD_CREDIT',
+    details: { provider: 'Visa', last4: '1234' },
+    isActive: true,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    businessProfileId: 'bp1',
+  },
+  pm2: {
+    id: 'pm2',
+    type: 'BANK',
+    details: { provider: 'Chase Bank', accountNumber: '****5678' },
+    isActive: true,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    businessProfileId: 'bp1',
+  },
+};
+
+const expenseCategories: Record<string, ExpenseCategory> = {
+  ec1: {
+    id: 'ec1',
+    name: 'SALES',
+    status: 'active',
+    businessProfileId: 'bp1',
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    lastUpdated: new Date(),
+  },
+  ec2: {
+    id: 'ec2',
+    name: 'SUPPLIES',
+    status: 'active',
+    businessProfileId: 'bp1',
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    lastUpdated: new Date(),
+  },
+};
+
 const TRANSACTIONS_PAGE = () => {
-  const transactions = [
-    {
-      id: 't1',
-      type: 'Incoming',
-      description: 'Customer Payment - Order #1234',
-      amount: 1200,
-      status: 'completed',
-      method: 'Credit Card (Visa ****1234)',
-      date: '2025-08-29',
-    },
-    {
-      id: 't2',
-      type: 'Outgoing',
-      description: 'Supplier Payment - Global Supplies Inc.',
-      amount: 320,
-      status: 'pending',
-      method: 'Bank Transfer (Chase ****5678)',
-      date: '2025-08-28',
-    },
-    {
-      id: 't3',
-      type: 'Incoming',
-      description: 'Customer Payment - Order #1235',
-      amount: 480,
-      status: 'completed',
-      method: 'PayPal',
-      date: '2025-08-27',
-    },
-    {
-      id: 't4',
-      type: 'Outgoing',
-      description: 'Supplier Payment - Fresh Produce Co.',
-      amount: 500,
-      status: 'failed',
-      method: 'Credit Card (Visa ****1234)',
-      date: '2025-08-25',
-    },
-  ];
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-    });
-  };
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return { color: 'bg-green-100 text-green-800', text: 'Completed' };
-      case 'pending':
-        return { color: 'bg-yellow-100 text-yellow-800', text: 'Pending' };
-      case 'failed':
-        return { color: 'bg-red-100 text-red-800', text: 'Failed' };
-      default:
-        return { color: 'bg-gray-100 text-gray-800', text: 'Unknown' };
-    }
-  };
-
-  const getTransactionIcon = (type: string) => {
-    return type === 'Incoming' ? (
+  const getTransactionIcon = (type: string) =>
+    type === 'PAYMENT' ? (
       <ArrowDownCircle className="h-5 w-5 text-white" />
     ) : (
       <ArrowUpCircle className="h-5 w-5 text-white" />
     );
+
+  const getStatusBadge = (amount: number) =>
+    amount >= 0
+      ? { color: 'bg-green-100 text-green-800', text: 'Income' }
+      : { color: 'bg-red-100 text-red-800', text: 'Expense' };
+
+  const formatDate = (date?: string | Date) => {
+    if (!date) {
+      return 'N/A';
+    }
+    const d = typeof date === 'string' ? new Date(date) : date;
+    return d.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
   };
 
+  const formatCurrency = (amount: number | string) =>
+    `$${Number(amount).toLocaleString()}`;
+
   return (
-    <main className="relative space-y-8 p-6">
+    <main className="space-y-8 p-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -111,7 +149,16 @@ const TRANSACTIONS_PAGE = () => {
       {/* Transactions Grid */}
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
         {transactions.map((tx) => {
-          const statusInfo = getStatusBadge(tx.status);
+          const txAmount = Number(tx.amount);
+          const method = tx.paymentMethodId
+            ? paymentMethods[tx.paymentMethodId]
+            : undefined;
+          const category = tx.expenseCategoryId
+            ? expenseCategories[tx.expenseCategoryId]
+            : undefined;
+          const statusInfo = getStatusBadge(
+            tx.type === 'PAYMENT' ? txAmount : -txAmount
+          );
 
           return (
             <Card
@@ -122,15 +169,19 @@ const TRANSACTIONS_PAGE = () => {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div
-                      className={`rounded-lg p-2 ${
-                        tx.type === 'Incoming' ? 'bg-green-500' : 'bg-red-500'
-                      }`}
+                      className={`rounded-lg p-2 ${tx.type === 'PAYMENT' ? 'bg-green-500' : 'bg-red-500'}`}
                     >
                       {getTransactionIcon(tx.type)}
                     </div>
-                    <div>
-                      <CardTitle className="text-lg">{tx.type}</CardTitle>
-                      <Muted className="text-sm">{tx.method}</Muted>
+                    <div className="flex flex-col">
+                      <CardTitle className="text-lg">
+                        {tx.type === 'PAYMENT' ? 'Incoming' : 'Outgoing'}
+                      </CardTitle>
+                      {method?.details?.provider && (
+                        <Badge variant="secondary">
+                          {method.details.provider}
+                        </Badge>
+                      )}
                     </div>
                   </div>
                   <DropdownMenu>
@@ -149,23 +200,33 @@ const TRANSACTIONS_PAGE = () => {
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
-
-                <div className="flex items-center justify-between pt-1">
+                <div className="flex items-center justify-between pt-2">
                   <Badge className={statusInfo.color}>{statusInfo.text}</Badge>
-                  <Muted className="text-sm">{formatDate(tx.date)}</Muted>
+                  <Muted className="text-sm">
+                    {formatDate(tx.transactionDate)}
+                  </Muted>
                 </div>
               </CardHeader>
 
-              <CardContent className="flex-1 space-y-3">
-                <p className="line-clamp-3 text-muted-foreground text-sm">
+              <CardContent className="flex-1 space-y-2">
+                <p className="line-clamp-2 text-muted-foreground">
                   {tx.description}
                 </p>
-                <div className="flex items-center justify-between font-medium text-sm">
-                  <span className="font-semibold text-lg">
-                    {tx.type === 'Incoming' ? '+' : '-'}${tx.amount}
+                {category && <Badge variant="outline">{category.name}</Badge>}
+                {tx.reference && (
+                  <P className="text-sm">Reference: {tx.reference}</P>
+                )}
+                <div className="mt-2 flex items-center justify-between font-medium text-lg">
+                  <span className="font-semibold">
+                    {tx.type === 'PAYMENT' ? '+' : '-'}
+                    {formatCurrency(tx.amount)}
                   </span>
-                  <Receipt className="h-4 w-4" />
+                  <Receipt className="h-5 w-5" />
                 </div>
+                <P className="mt-1 text-muted-foreground text-xs">
+                  Created: {formatDate(tx.createdAt)} | Updated:{' '}
+                  {formatDate(tx.updatedAt)}
+                </P>
               </CardContent>
             </Card>
           );
@@ -174,18 +235,12 @@ const TRANSACTIONS_PAGE = () => {
 
       {/* Create CTA */}
       <Card className="border-dashed">
-        <CardContent className="p-6">
-          <div className="flex flex-col items-center justify-center space-y-4 text-center">
-            <div className="w-fit">
-              <H2 className="font-semibold text-xl">Add New Transaction</H2>
-              <P>
-                Record a new payment or payout to keep your financials updated.
-              </P>
-            </div>
-            <Button className="gap-2">
-              <Plus className="h-4 w-4" /> Create Transaction
-            </Button>
-          </div>
+        <CardContent className="p-6 text-center">
+          <H2 className="font-semibold text-xl">Add New Transaction</H2>
+          <P>Record a new payment or payout to keep your financials updated.</P>
+          <Button className="mt-2 gap-2">
+            <Plus className="h-4 w-4" /> Create Transaction
+          </Button>
         </CardContent>
       </Card>
     </main>
