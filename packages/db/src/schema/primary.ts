@@ -14,6 +14,7 @@ import {
   budgetCategoryEnum,
   cashFlowDirectionEnum,
   expenseCategoryEnum,
+  paymentMethodEnum,
   transactionTypeEnum,
 } from './enums';
 
@@ -172,16 +173,31 @@ export const expenses = pgTable('expenses', {
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
 
-export const transactions = pgTable('transactions', {
+export const paymentMethods = pgTable('payment_methods', {
   id: uuid('id').primaryKey().defaultRandom(),
   businessProfileId: uuid('business_profile_id')
     .references(() => businessProfile.id, { onDelete: 'cascade' })
     .notNull(),
 
+  type: paymentMethodEnum('payment_method_type').notNull(),
+  details: text('details'),
+  isActive: boolean('is_active').default(true),
+
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+export const transactions = pgTable('transactions', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  businessProfileId: uuid('business_profile_id')
+    .references(() => businessProfile.id, { onDelete: 'cascade' })
+    .notNull(),
+  paymentMethodId: uuid('payment_method_id').references(
+    () => paymentMethods.id
+  ),
   expenseCategoryId: uuid('expense_category_id').references(
     () => expenseCategories.id
   ),
-
   type: transactionTypeEnum('type').notNull(),
   amount: decimal('amount', { precision: 12, scale: 2 }).notNull(),
   description: text('description'),
@@ -229,6 +245,11 @@ export const budgets = pgTable('budgets', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
+
+export type PaymentMethod = typeof paymentMethods.$inferSelect;
+export type NewPaymentMethod = typeof paymentMethods.$inferInsert;
+export const PaymentMethodSelect = createSelectSchema(paymentMethods);
+export const PaymentMethodInsert = createInsertSchema(paymentMethods);
 
 export type Transaction = typeof transactions.$inferSelect;
 export type NewTransaction = typeof transactions.$inferInsert;

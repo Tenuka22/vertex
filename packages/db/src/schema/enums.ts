@@ -28,3 +28,11 @@ export const cashFlowDirectionEnum = pgEnum('cash_flow_direction', [
   'INCOMING',
   'OUTGOING',
 ]);
+
+export const paymentMethodEnum = pgEnum('payment_method', [
+  'BANK',
+  'CASH',
+  'CARD_CREDIT',
+  'DIGITAL_WALLET',
+  'OTHER',
+]);
