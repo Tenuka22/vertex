@@ -1,6 +1,7 @@
 'use client';
 
 import { ORPCError } from '@orpc/client';
+import { businessProfileInsertSchema } from '@repo/db/schema/primary';
 import { type ReactFormExtendedApi, useForm } from '@tanstack/react-form';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useState } from 'react';
@@ -23,7 +24,6 @@ import {
   StepperTrigger,
 } from '../ui/stepper';
 import { Textarea } from '../ui/textarea';
-import { businessProfileInsertSchema } from '@repo/db/schema/primary';
 
 type FormValues = z.infer<typeof businessProfileInsertSchema>;
 
@@ -54,9 +54,9 @@ type FormType = ReactFormExtendedApi<
   // biome-ignore lint/suspicious/noExplicitAny: RUle
   any
 >;
-
 const FirstStepFields = ({ form }: { form: FormType }) => (
   <div className="grid gap-4 sm:grid-cols-2">
+    {/** Company Info */}
     <form.Field name="companyName">
       {(field) => (
         <div className="space-y-2">
@@ -73,6 +73,36 @@ const FirstStepFields = ({ form }: { form: FormType }) => (
               {err?.message}
             </p>
           ))}
+        </div>
+      )}
+    </form.Field>
+
+    <form.Field name="legalName">
+      {(field) => (
+        <div className="space-y-2">
+          <Label htmlFor={field.name}>Legal Name</Label>
+          <Input
+            id={field.name}
+            onBlur={field.handleBlur}
+            onChange={(e) => field.handleChange(e.target.value)}
+            placeholder="Acme Corporation"
+            value={field.state.value ?? ''}
+          />
+        </div>
+      )}
+    </form.Field>
+
+    <form.Field name="tradingName">
+      {(field) => (
+        <div className="space-y-2">
+          <Label htmlFor={field.name}>Trading Name</Label>
+          <Input
+            id={field.name}
+            onBlur={field.handleBlur}
+            onChange={(e) => field.handleChange(e.target.value)}
+            placeholder="Acme Trading"
+            value={field.state.value ?? ''}
+          />
         </div>
       )}
     </form.Field>
@@ -128,6 +158,69 @@ const FirstStepFields = ({ form }: { form: FormType }) => (
       )}
     </form.Field>
 
+    <form.Field name="industry">
+      {(field) => (
+        <div className="space-y-2">
+          <Label htmlFor={field.name}>Industry</Label>
+          <Input
+            id={field.name}
+            onBlur={field.handleBlur}
+            onChange={(e) => field.handleChange(e.target.value)}
+            placeholder="Software"
+            value={field.state.value ?? ''}
+          />
+        </div>
+      )}
+    </form.Field>
+
+    <form.Field name="businessType">
+      {(field) => (
+        <div className="space-y-2">
+          <Label htmlFor={field.name}>Business Type</Label>
+          <Input
+            id={field.name}
+            onBlur={field.handleBlur}
+            onChange={(e) => field.handleChange(e.target.value)}
+            placeholder="Private"
+            value={field.state.value ?? ''}
+          />
+        </div>
+      )}
+    </form.Field>
+
+    <form.Field name="employeeCount">
+      {(field) => (
+        <div className="space-y-2">
+          <Label htmlFor={field.name}>Employee Count</Label>
+          <Input
+            id={field.name}
+            onBlur={field.handleBlur}
+            onChange={(e) => field.handleChange(Number(e.target.value))}
+            placeholder="100"
+            type="number"
+            value={field.state.value ?? ''}
+          />
+        </div>
+      )}
+    </form.Field>
+
+    <form.Field name="foundedYear">
+      {(field) => (
+        <div className="space-y-2">
+          <Label htmlFor={field.name}>Founded Year</Label>
+          <Input
+            id={field.name}
+            onBlur={field.handleBlur}
+            onChange={(e) => field.handleChange(Number(e.target.value))}
+            placeholder="2020"
+            type="number"
+            value={field.state.value ?? ''}
+          />
+        </div>
+      )}
+    </form.Field>
+
+    {/** Address Fields */}
     <form.Field name="addressLine1">
       {(field) => (
         <div className="space-y-2 sm:col-span-2">
@@ -222,6 +315,7 @@ const FirstStepFields = ({ form }: { form: FormType }) => (
 
 const SecondStepFields = ({ form }: { form: FormType }) => (
   <div className="grid gap-4 sm:grid-cols-2">
+    {/** Branding & Contact */}
     <form.Field name="logoUrl">
       {(field) => (
         <div className="space-y-2">
@@ -246,41 +340,22 @@ const SecondStepFields = ({ form }: { form: FormType }) => (
             defaultValue={field.state.value ?? '#3b82f6'}
             onValueChange={field.handleChange}
           >
-            <RadioGroupItem
-              aria-label="Blue"
-              className="size-6 border-[#3b82f6] bg-[#3b82f6] shadow-none data-[state=checked]:border-[#3b82f6] data-[state=checked]:bg-[#3b82f6]"
-              value="#3b82f6"
-            />
-            <RadioGroupItem
-              aria-label="Indigo"
-              className="size-6 border-[#6366f1] bg-[#6366f1] shadow-none data-[state=checked]:border-[#6366f1] data-[state=checked]:bg-[#6366f1]"
-              value="#6366f1"
-            />
-            <RadioGroupItem
-              aria-label="Pink"
-              className="size-6 border-[#ec4899] bg-[#ec4899] shadow-none data-[state=checked]:border-[#ec4899] data-[state=checked]:bg-[#ec4899]"
-              value="#ec4899"
-            />
-            <RadioGroupItem
-              aria-label="Red"
-              className="size-6 border-[#ef4444] bg-[#ef4444] shadow-none data-[state=checked]:border-[#ef4444] data-[state=checked]:bg-[#ef4444]"
-              value="#ef4444"
-            />
-            <RadioGroupItem
-              aria-label="Orange"
-              className="size-6 border-[#f97316] bg-[#f97316] shadow-none data-[state=checked]:border-[#f97316] data-[state=checked]:bg-[#f97316]"
-              value="#f97316"
-            />
-            <RadioGroupItem
-              aria-label="Amber"
-              className="size-6 border-[#f59e0b] bg-[#f59e0b] shadow-none data-[state=checked]:border-[#f59e0b] data-[state=checked]:bg-[#f59e0b]"
-              value="#f59e0b"
-            />
-            <RadioGroupItem
-              aria-label="Emerald"
-              className="size-6 border-[#10b981] bg-[#10b981] shadow-none data-[state=checked]:border-[#10b981] data-[state=checked]:bg-[#10b981]"
-              value="#10b981"
-            />
+            {[
+              '#3b82f6',
+              '#6366f1',
+              '#ec4899',
+              '#ef4444',
+              '#f97316',
+              '#f59e0b',
+              '#10b981',
+            ].map((color) => (
+              <RadioGroupItem
+                aria-label={color}
+                className={`size-6 border-[${color}] bg-[${color}] shadow-none data-[state=checked]:border-[${color}] data-[state=checked]:bg-[${color}]`}
+                key={color}
+                value={color}
+              />
+            ))}
           </RadioGroup>
         </div>
       )}
@@ -296,6 +371,68 @@ const SecondStepFields = ({ form }: { form: FormType }) => (
             onBlur={field.handleBlur}
             onChange={(e) => field.handleChange(e.target.value)}
             placeholder="Brief description of your company"
+            value={field.state.value ?? ''}
+          />
+        </div>
+      )}
+    </form.Field>
+
+    <form.Field name="mission">
+      {(field) => (
+        <div className="space-y-2 sm:col-span-2">
+          <Label htmlFor={field.name}>Mission</Label>
+          <Textarea
+            className="min-h-24"
+            id={field.name}
+            onBlur={field.handleBlur}
+            onChange={(e) => field.handleChange(e.target.value)}
+            placeholder="Company mission"
+            value={field.state.value ?? ''}
+          />
+        </div>
+      )}
+    </form.Field>
+
+    <form.Field name="vision">
+      {(field) => (
+        <div className="space-y-2 sm:col-span-2">
+          <Label htmlFor={field.name}>Vision</Label>
+          <Textarea
+            className="min-h-24"
+            id={field.name}
+            onBlur={field.handleBlur}
+            onChange={(e) => field.handleChange(e.target.value)}
+            placeholder="Company vision"
+            value={field.state.value ?? ''}
+          />
+        </div>
+      )}
+    </form.Field>
+
+    <form.Field name="twitter">
+      {(field) => (
+        <div className="space-y-2">
+          <Label htmlFor={field.name}>Twitter</Label>
+          <Input
+            id={field.name}
+            onBlur={field.handleBlur}
+            onChange={(e) => field.handleChange(e.target.value)}
+            placeholder="@acme"
+            value={field.state.value ?? ''}
+          />
+        </div>
+      )}
+    </form.Field>
+
+    <form.Field name="linkedin">
+      {(field) => (
+        <div className="space-y-2">
+          <Label htmlFor={field.name}>LinkedIn</Label>
+          <Input
+            id={field.name}
+            onBlur={field.handleBlur}
+            onChange={(e) => field.handleChange(e.target.value)}
+            placeholder="https://linkedin.com/company/acme"
             value={field.state.value ?? ''}
           />
         </div>
@@ -342,6 +479,8 @@ export const BusinessProfileForm = <TDefaultData extends { id: string }>({
       brandColor: '',
       description: '',
       isActive: true,
+      twitter: '',
+      linkedin: '',
       ...defaultData,
     } satisfies FormValues as FormValues,
     validators: { onSubmit: businessProfileInsertSchema },

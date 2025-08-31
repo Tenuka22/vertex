@@ -10,7 +10,9 @@ import {
 } from 'drizzle-orm/pg-core';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { user } from './auth';
-export * from './auth'
+
+// biome-ignore lint/performance/noBarrelFile: Needs the Auth Schema
+export * from './auth';
 
 export const businessProfile = pgTable('business_profile', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -23,6 +25,8 @@ export const businessProfile = pgTable('business_profile', {
   tradingName: varchar('trading_name', { length: 255 }),
 
   email: varchar('email', { length: 255 }).notNull(),
+  twitter: varchar('twitter', { length: 255 }).notNull(),
+  linkedin: varchar('linkedin', { length: 255 }).notNull(),
   phone: varchar('phone', { length: 50 }),
   website: varchar('website', { length: 255 }),
 
@@ -144,12 +148,18 @@ export type NewBusinessProfile = typeof businessProfile.$inferInsert;
 
 export type BusinessInformation = typeof businessInformation.$inferSelect;
 export type NewBusinessInformation = typeof businessInformation.$inferInsert;
+export const BusinessInformationSelect =
+  createSelectSchema(businessInformation);
+export const BusinessInformationInsert =
+  createInsertSchema(businessInformation);
 
 export type BusinessContact = typeof businessContacts.$inferSelect;
 export type NewBusinessContact = typeof businessContacts.$inferInsert;
 
 export type BusinessLocation = typeof businessLocations.$inferSelect;
 export type NewBusinessLocation = typeof businessLocations.$inferInsert;
+export const BusinessLocationSelect = createSelectSchema(businessLocations);
+export const BusinessLocationInsert = createInsertSchema(businessLocations);
 
 export const businessProfileInsertSchema = createInsertSchema(businessProfile);
 export const businessProfileSelectSchema = createSelectSchema(businessProfile);

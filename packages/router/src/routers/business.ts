@@ -1,9 +1,12 @@
 import { ORPCError } from '@orpc/client';
+import {
+  BusinessProfileInsert,
+  businessProfile,
+} from '@repo/db/schema/primary';
 import { and, eq } from 'drizzle-orm';
 import z from 'zod';
-import { BusinessProfileInsert, businessProfile } from '@repo/db/schema/primary';
-import { protectedProcedure } from '../domain/orpc';
 import { db } from '../db';
+import { protectedProcedure } from '../domain/orpc';
 
 export const createUpdateBusinessProfile = protectedProcedure
   .input(

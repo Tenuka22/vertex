@@ -8,6 +8,18 @@ import {
   softDeleteBusinessProfile,
 } from './business';
 
+import {
+  createUpdateBusinessInformation,
+  deleteBusinessInformation,
+  getUserBusinessInformation,
+} from './businessInformation';
+
+import {
+  createUpdateBusinessLocation,
+  deleteBusinessLocation,
+  getBusinessLocations,
+} from './businessLocation';
+
 export const appRouter = {
   healthCheck: publicProcedure.handler(() => {
     return 'OK';
@@ -18,6 +30,16 @@ export const appRouter = {
     delete: deleteBusinessProfile,
     softDelete: softDeleteBusinessProfile,
     reactivate: reactivateBusinessProfile,
+  },
+  businessInformation: {
+    createUpdate: createUpdateBusinessInformation,
+    get: getUserBusinessInformation,
+    delete: deleteBusinessInformation,
+  },
+  businessLocation: {
+    createUpdate: createUpdateBusinessLocation,
+    get: getBusinessLocations,
+    delete: deleteBusinessLocation,
   },
 } satisfies AnyRouter;
 

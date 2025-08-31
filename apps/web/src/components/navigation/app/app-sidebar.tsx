@@ -251,6 +251,10 @@ export const AppSidebar = ({
               title: 'Business Information',
               url: '/app/settings/business',
             },
+            {
+              title: 'Business Locations',
+              url: '/app/settings/business-locations',
+            },
           ],
         },
         {
