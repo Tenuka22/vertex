@@ -29,6 +29,7 @@ import {
   SidebarMenuSubItem,
   useSidebar,
 } from '@/components/ui/sidebar';
+import { cn } from '@/lib/utils';
 import type { AdminNavGroup, NavCollapsible, NavItem, NavLink } from './types';
 
 export const NavGroup = ({ title, items }: AdminNavGroup) => {
@@ -108,6 +109,7 @@ const SidebarMenuCollapsible = ({
               <SidebarMenuSubItem key={subItem.title}>
                 <SidebarMenuSubButton
                   asChild
+                  className={cn(subItem.disabled && 'opacity-50')}
                   isActive={checkIsActive(href, subItem)}
                 >
                   <Link href={subItem.url} onClick={() => setOpenMobile(false)}>

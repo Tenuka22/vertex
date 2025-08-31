@@ -35,11 +35,13 @@ export const AppSidebar = ({
           title: 'Overview',
           icon: BarChart3,
           url: '/app/dashboard',
+          disabled: true,
         },
         {
           title: 'Analytics',
           icon: TrendingUp,
           url: '/app/analytics',
+          disabled: true,
         },
       ],
     },
@@ -89,6 +91,7 @@ export const AppSidebar = ({
             {
               title: 'Create Invoice',
               url: '/app/invoices/create',
+              disabled: true,
             },
             {
               title: 'All Invoices',
@@ -102,6 +105,7 @@ export const AppSidebar = ({
           items: [
             {
               title: 'Track Expenses',
+              disabled: true,
               url: '/app/expenses',
             },
             {
@@ -110,6 +114,7 @@ export const AppSidebar = ({
             },
             {
               title: 'Expense Reports',
+              disabled: true,
               url: '/app/expenses/reports',
             },
           ],
@@ -129,6 +134,7 @@ export const AppSidebar = ({
             },
             {
               title: 'Customer Analytics',
+              disabled: true,
               url: '/app/customers/analytics',
             },
           ],
@@ -167,18 +173,22 @@ export const AppSidebar = ({
             {
               title: 'Financial Reports',
               url: '/app/reports/financial',
+              disabled: true,
             },
             {
               title: 'Sales Reports',
               url: '/app/reports/sales',
+              disabled: true,
             },
             {
               title: 'Customer Reports',
               url: '/app/reports/customers',
+              disabled: true,
             },
             {
               title: 'Custom Reports',
               url: '/app/reports/custom',
+              disabled: true,
             },
           ],
         },
@@ -193,10 +203,12 @@ export const AppSidebar = ({
             {
               title: 'Performance Metrics',
               url: '/app/goals/metrics',
+              disabled: true,
             },
             {
               title: 'Benchmarking',
               url: '/app/goals/benchmarking',
+              disabled: true,
             },
           ],
         },
@@ -207,14 +219,17 @@ export const AppSidebar = ({
             {
               title: 'Revenue Forecast',
               url: '/app/forecast/revenue',
+              disabled: true,
             },
             {
               title: 'Cash Flow Forecast',
               url: '/app/forecast/cash-flow',
+              disabled: true,
             },
             {
               title: 'Growth Projections',
               url: '/app/forecast/growth',
+              disabled: true,
             },
           ],
         },
@@ -230,6 +245,7 @@ export const AppSidebar = ({
             {
               title: 'Company Profile',
               url: '/app/settings/company',
+              disabled: true,
             },
             {
               title: 'Business Information',
@@ -244,14 +260,17 @@ export const AppSidebar = ({
             {
               title: 'Notification Center',
               url: '/app/notifications',
+              disabled: true,
             },
             {
               title: 'Notification Settings',
               url: '/app/notifications/settings',
+              disabled: true,
             },
             {
               title: 'Alert Rules',
               url: '/app/notifications/rules',
+              disabled: true,
             },
           ],
         },
