@@ -50,8 +50,9 @@ const InfoRow = ({
 }) => (
   <div className="space-y-1">
     <Label className="font-medium text-muted-foreground text-sm">{label}</Label>
-    <div className="flex items-center gap-2">
-      {icon}
+
+    <div className="flex items-center gap-3">
+      <div className="size-fit pt-2">{icon}</div>
       <p className="font-semibold">{value}</p>
     </div>
   </div>
