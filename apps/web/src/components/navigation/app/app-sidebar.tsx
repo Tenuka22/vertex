@@ -11,7 +11,6 @@ import {
   Receipt,
   Target,
   TrendingUp,
-  User,
   Users,
   Wallet,
 } from 'lucide-react';
@@ -235,16 +234,6 @@ export const AppSidebar = ({
             {
               title: 'Business Information',
               url: '/app/settings/business',
-            },
-          ],
-        },
-        {
-          title: 'User Management',
-          icon: User,
-          items: [
-            {
-              title: 'Team Members',
-              url: '/app/users/team',
             },
           ],
         },
