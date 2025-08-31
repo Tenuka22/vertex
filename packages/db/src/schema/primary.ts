@@ -10,9 +10,11 @@ import {
 } from 'drizzle-orm/pg-core';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { user } from './auth';
+import { expenseCategoryEnum } from './enums';
 
-// biome-ignore lint/performance/noBarrelFile: Needs the Auth Schema
+// biome-ignore lint/performance/noBarrelFile: Needs the Schema
 export * from './auth';
+export * from './enums';
 
 export const businessProfile = pgTable('business_profile', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -140,6 +142,40 @@ export const businessLocations = pgTable('business_locations', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
+
+export const expenseCategories = pgTable('expense_categories', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  businessProfileId: uuid('business_profile_id')
+    .references(() => businessProfile.id, { onDelete: 'cascade' })
+    .notNull(),
+  name: expenseCategoryEnum('name').notNull(),
+  status: varchar('status', { length: 20 }).default('active').notNull(),
+  lastUpdated: timestamp('last_updated').defaultNow().notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+export const expenses = pgTable('expenses', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  expenseCategoryId: uuid('expense_category_id')
+    .references(() => expenseCategories.id, { onDelete: 'cascade' })
+    .notNull(),
+  name: varchar('name', { length: 255 }).notNull(),
+  frequency: varchar('frequency', { length: 50 }).notNull(),
+  status: varchar('status', { length: 20 }).default('active').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+export type ExpenseCategory = typeof expenseCategories.$inferSelect;
+export type NewExpenseCategory = typeof expenseCategories.$inferInsert;
+export const ExpenseCategorySelect = createSelectSchema(expenseCategories);
+export const ExpenseCategoryInsert = createInsertSchema(expenseCategories);
+
+export type Expense = typeof expenses.$inferSelect;
+export type NewExpense = typeof expenses.$inferInsert;
+export const ExpenseSelect = createSelectSchema(expenses);
+export const ExpenseInsert = createInsertSchema(expenses);
 
 export type BusinessProfile = typeof businessProfile.$inferSelect;
 export const BusinessProfileSelect = createSelectSchema(businessProfile);

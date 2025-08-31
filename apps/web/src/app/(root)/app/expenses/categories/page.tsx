@@ -1,16 +1,5 @@
-import {
-  Car,
-  ChevronDown,
-  Filter,
-  Gamepad2,
-  GraduationCap,
-  Heart,
-  Home,
-  Menu,
-  Plus,
-  ShoppingBag,
-  Utensils,
-} from 'lucide-react';
+import type { Expense, ExpenseCategory } from '@repo/db/schema/primary';
+import { ChevronDown, Filter, Menu, Plus } from 'lucide-react';
 import { H2, Muted, P } from '@/components/design/typography';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -22,181 +11,237 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Separator } from '@/components/ui/separator';
+import { getCategoryMeta } from '@/lib/helpers';
 import { cn } from '@/lib/utils';
 
+type ExpenseData = ExpenseCategory & { expenses: Expense[] };
+
+const businessProfileId = '1111';
+
 const EXPENSE_CATEGORIES_PAGE = () => {
-  const expenseCategories = [
+  const rawCategories: ExpenseData[] = [
     {
       id: 'vehicle',
-      name: 'Vehicle',
-      icon: Car,
-      color: 'bg-blue-500',
-      expenseCount: 12,
-      lastUpdated: '2025-08-28',
+      businessProfileId,
+      name: 'VEHICLE',
       status: 'active',
+      lastUpdated: new Date('2025-08-28'),
+      createdAt: new Date(),
+      updatedAt: new Date(),
       expenses: [
         {
           id: '1',
+          expenseCategoryId: 'vehicle',
           name: 'Vehicle Repair',
           frequency: 'As needed',
           status: 'inactive',
+          createdAt: new Date(),
+          updatedAt: new Date(),
         },
         {
           id: '2',
+          expenseCategoryId: 'vehicle',
           name: 'Fuel Expenses',
           frequency: 'Weekly',
           status: 'active',
+          createdAt: new Date(),
+          updatedAt: new Date(),
         },
       ],
     },
     {
       id: 'housing',
-      name: 'Housing',
-      icon: Home,
-      color: 'bg-green-500',
-      expenseCount: 8,
-      lastUpdated: '2025-08-30',
+      businessProfileId,
+      name: 'HOUSING',
       status: 'active',
+      lastUpdated: new Date('2025-08-30'),
+      createdAt: new Date(),
+      updatedAt: new Date(),
       expenses: [
         {
           id: '3',
+          expenseCategoryId: 'housing',
           name: 'Rent/Mortgage',
           frequency: 'Monthly',
           status: 'active',
+          createdAt: new Date(),
+          updatedAt: new Date(),
         },
         {
           id: '4',
+          expenseCategoryId: 'housing',
           name: 'Utilities',
           frequency: 'Monthly',
           status: 'active',
+          createdAt: new Date(),
+          updatedAt: new Date(),
         },
         {
           id: '5',
+          expenseCategoryId: 'housing',
           name: 'Home Maintenance',
           frequency: 'As needed',
           status: 'active',
+          createdAt: new Date(),
+          updatedAt: new Date(),
         },
       ],
     },
     {
       id: 'food',
-      name: 'Food & Dining',
-      icon: Utensils,
-      color: 'bg-orange-500',
-      expenseCount: 24,
-      lastUpdated: '2025-08-29',
+      businessProfileId,
+      name: 'FOOD',
       status: 'active',
+      lastUpdated: new Date('2025-08-29'),
+      createdAt: new Date(),
+      updatedAt: new Date(),
       expenses: [
         {
           id: '6',
+          expenseCategoryId: 'food',
           name: 'Groceries',
           frequency: 'Weekly',
           status: 'active',
+          createdAt: new Date(),
+          updatedAt: new Date(),
         },
         {
           id: '7',
+          expenseCategoryId: 'food',
           name: 'Restaurants',
           frequency: 'Weekly',
           status: 'active',
+          createdAt: new Date(),
+          updatedAt: new Date(),
         },
       ],
     },
     {
       id: 'shopping',
-      name: 'Shopping',
-      icon: ShoppingBag,
-      color: 'bg-purple-500',
-      expenseCount: 15,
-      lastUpdated: '2025-08-27',
+      businessProfileId,
+      name: 'SHOPPING',
       status: 'active',
+      lastUpdated: new Date('2025-08-27'),
+      createdAt: new Date(),
+      updatedAt: new Date(),
       expenses: [
         {
           id: '8',
+          expenseCategoryId: 'shopping',
           name: 'Clothing',
           frequency: 'Monthly',
           status: 'active',
+          createdAt: new Date(),
+          updatedAt: new Date(),
         },
         {
           id: '9',
+          expenseCategoryId: 'shopping',
           name: 'Electronics',
           frequency: 'As needed',
           status: 'inactive',
+          createdAt: new Date(),
+          updatedAt: new Date(),
         },
       ],
     },
     {
       id: 'entertainment',
-      name: 'Entertainment',
-      icon: Gamepad2,
-      color: 'bg-pink-500',
-      expenseCount: 18,
-      lastUpdated: '2025-08-26',
+      businessProfileId,
+      name: 'ENTERTAINMENT',
       status: 'active',
+      lastUpdated: new Date('2025-08-26'),
+      createdAt: new Date(),
+      updatedAt: new Date(),
       expenses: [
         {
           id: '10',
+          expenseCategoryId: 'entertainment',
           name: 'Movies & Shows',
           frequency: 'Monthly',
           status: 'active',
+          createdAt: new Date(),
+          updatedAt: new Date(),
         },
         {
           id: '11',
+          expenseCategoryId: 'entertainment',
           name: 'Games & Hobbies',
           frequency: 'Monthly',
           status: 'active',
+          createdAt: new Date(),
+          updatedAt: new Date(),
         },
       ],
     },
     {
       id: 'education',
-      name: 'Education',
-      icon: GraduationCap,
-      color: 'bg-indigo-500',
-      expenseCount: 6,
-      lastUpdated: '2025-08-25',
+      businessProfileId,
+      name: 'EDUCATION',
       status: 'active',
+      lastUpdated: new Date('2025-08-25'),
+      createdAt: new Date(),
+      updatedAt: new Date(),
       expenses: [
         {
           id: '12',
+          expenseCategoryId: 'education',
           name: 'Online Courses',
           frequency: 'Quarterly',
           status: 'active',
+          createdAt: new Date(),
+          updatedAt: new Date(),
         },
         {
           id: '13',
+          expenseCategoryId: 'education',
           name: 'Books & Materials',
           frequency: 'Monthly',
           status: 'active',
+          createdAt: new Date(),
+          updatedAt: new Date(),
         },
       ],
     },
     {
       id: 'healthcare',
-      name: 'Healthcare',
-      icon: Heart,
-      color: 'bg-red-500',
-      expenseCount: 9,
-      lastUpdated: '2025-08-24',
+      businessProfileId,
+      name: 'HEALTHCARE',
       status: 'active',
+      lastUpdated: new Date('2025-08-24'),
+      createdAt: new Date(),
+      updatedAt: new Date(),
       expenses: [
         {
           id: '14',
+          expenseCategoryId: 'healthcare',
           name: 'Medical Bills',
           frequency: 'As needed',
           status: 'active',
+          createdAt: new Date(),
+          updatedAt: new Date(),
         },
         {
           id: '15',
+          expenseCategoryId: 'healthcare',
           name: 'Medications',
           frequency: 'Monthly',
           status: 'active',
+          createdAt: new Date(),
+          updatedAt: new Date(),
         },
       ],
     },
   ];
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+  const expenseCategories = rawCategories.map((c) => ({
+    ...c,
+    ...getCategoryMeta(c),
+    expenseCount: c.expenses.length,
+  }));
+
+  const formatDate = (date: Date) => {
+    return date.toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
     });
