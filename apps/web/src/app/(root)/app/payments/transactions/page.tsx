@@ -235,12 +235,16 @@ const TRANSACTIONS_PAGE = () => {
 
       {/* Create CTA */}
       <Card className="border-dashed">
-        <CardContent className="p-6 text-center">
-          <H2 className="font-semibold text-xl">Add New Transaction</H2>
-          <P>Record a new payment or payout to keep your financials updated.</P>
-          <Button className="mt-2 gap-2">
-            <Plus className="h-4 w-4" /> Create Transaction
-          </Button>
+        <CardContent className="p-6">
+          <div className="flex flex-col items-center justify-center space-y-4 text-center">
+            <H2 className="font-semibold text-xl">Add New Transaction</H2>
+            <P>
+              Record a new payment or payout to keep your financials updated.
+            </P>
+            <Button className="gap-2">
+              <Plus className="h-4 w-4" /> Create Transaction
+            </Button>
+          </div>
         </CardContent>
       </Card>
     </main>
