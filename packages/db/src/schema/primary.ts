@@ -10,7 +10,12 @@ import {
 } from 'drizzle-orm/pg-core';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { user } from './auth';
-import { expenseCategoryEnum } from './enums';
+import {
+  budgetCategoryEnum,
+  cashFlowDirectionEnum,
+  expenseCategoryEnum,
+  transactionTypeEnum,
+} from './enums';
 
 // biome-ignore lint/performance/noBarrelFile: Needs the Schema
 export * from './auth';
@@ -166,6 +171,79 @@ export const expenses = pgTable('expenses', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
+
+export const transactions = pgTable('transactions', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  businessProfileId: uuid('business_profile_id')
+    .references(() => businessProfile.id, { onDelete: 'cascade' })
+    .notNull(),
+
+  expenseCategoryId: uuid('expense_category_id').references(
+    () => expenseCategories.id
+  ),
+
+  type: transactionTypeEnum('type').notNull(),
+  amount: decimal('amount', { precision: 12, scale: 2 }).notNull(),
+  description: text('description'),
+  transactionDate: timestamp('transaction_date').defaultNow().notNull(),
+  reference: varchar('reference', { length: 255 }),
+
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+export const cashFlows = pgTable('cash_flows', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  businessProfileId: uuid('business_profile_id')
+    .references(() => businessProfile.id, { onDelete: 'cascade' })
+    .notNull(),
+
+  transactionId: uuid('transaction_id')
+    .references(() => transactions.id, { onDelete: 'cascade' })
+    .notNull(),
+
+  direction: cashFlowDirectionEnum('cash_flow_direction').notNull(),
+  amount: decimal('amount', { precision: 12, scale: 2 }).notNull(),
+  flowDate: timestamp('flow_date').defaultNow().notNull(),
+
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+export const budgets = pgTable('budgets', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  businessProfileId: uuid('business_profile_id')
+    .references(() => businessProfile.id, { onDelete: 'cascade' })
+    .notNull(),
+
+  category: budgetCategoryEnum('category').notNull(),
+  allocatedAmount: decimal('allocated_amount', {
+    precision: 12,
+    scale: 2,
+  }).notNull(),
+  spentAmount: decimal('spent_amount', { precision: 12, scale: 2 }).notNull(),
+
+  periodStart: timestamp('period_start').notNull(),
+  periodEnd: timestamp('period_end').notNull(),
+
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+export type Transaction = typeof transactions.$inferSelect;
+export type NewTransaction = typeof transactions.$inferInsert;
+export const TransactionSelect = createSelectSchema(transactions);
+export const TransactionInsert = createInsertSchema(transactions);
+
+export type CashFlow = typeof cashFlows.$inferSelect;
+export type NewCashFlow = typeof cashFlows.$inferInsert;
+export const CashFlowSelect = createSelectSchema(cashFlows);
+export const CashFlowInsert = createInsertSchema(cashFlows);
+
+export type Budget = typeof budgets.$inferSelect;
+export type NewBudget = typeof budgets.$inferInsert;
+export const BudgetSelect = createSelectSchema(budgets);
+export const BudgetInsert = createInsertSchema(budgets);
 
 export type ExpenseCategory = typeof expenseCategories.$inferSelect;
 export type NewExpenseCategory = typeof expenseCategories.$inferInsert;
