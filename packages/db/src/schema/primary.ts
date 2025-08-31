@@ -2,6 +2,7 @@ import {
   boolean,
   decimal,
   integer,
+  jsonb,
   pgTable,
   text,
   timestamp,
@@ -17,6 +18,7 @@ import {
   paymentMethodEnum,
   transactionTypeEnum,
 } from './enums';
+import type { PaymentMethodDetails } from './types';
 
 // biome-ignore lint/performance/noBarrelFile: Needs the Schema
 export * from './auth';
@@ -180,8 +182,8 @@ export const paymentMethods = pgTable('payment_methods', {
     .notNull(),
 
   type: paymentMethodEnum('payment_method_type').notNull(),
-  details: text('details'),
-  isActive: boolean('is_active').default(true),
+  details: jsonb('details').$type<PaymentMethodDetails>(),
+  isActive: boolean('is_active').default(true).notNull(),
 
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
