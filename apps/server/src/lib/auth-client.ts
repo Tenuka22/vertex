@@ -1,9 +1,9 @@
+// biome-ignore lint/performance/noNamespaceImport: Drizzle Rule
+import * as schema from '@repo/db/schema/auth';
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { openAPI } from 'better-auth/plugins';
 import { drizzle } from 'drizzle-orm/node-postgres';
-// biome-ignore lint/performance/noNamespaceImport: Drizzle Rule
-import * as schema from '@repo/db/schema/auth';
 
 export const authClient = ({
   BETTER_AUTH_SECRET,
