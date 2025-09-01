@@ -11,7 +11,7 @@ export const queryClient = new QueryClient({
     onError: (error) => {
       toast.error(`Error: ${error.message}`, {
         action: {
-          label: 'retry',
+          label: 'Retry',
           onClick: () => {
             queryClient.invalidateQueries();
           },
@@ -25,29 +25,13 @@ export const link = new RPCLink({
   url: `${process.env.NEXT_PUBLIC_SERVER_URL}/rpc`,
   fetch: async (url, options) => {
     const customHeaders = await getHeaders();
-    const headersObject: Record<string, string> = {};
 
-    if (customHeaders instanceof Headers) {
-      for (const [key, value] of customHeaders.entries()) {
-        headersObject[key] = value;
-      }
-    } else if (
-      customHeaders &&
-      typeof customHeaders === 'object' &&
-      Symbol.iterator in customHeaders
-    ) {
-      for (const [key, value] of customHeaders) {
-        if (typeof key === 'string' && typeof value === 'string') {
-          headersObject[key] = value;
-        }
-      }
-    } else if (customHeaders && typeof customHeaders === 'object') {
-      Object.assign(headersObject, customHeaders);
-    }
-
+    const cookiesHeader = customHeaders.find(([k]) => k === 'cookie');
     return fetch(url, {
       ...options,
-      headers: headersObject,
+      headers: cookiesHeader
+        ? { [cookiesHeader[0]]: cookiesHeader[1] }
+        : undefined,
       credentials: 'include',
     });
   },

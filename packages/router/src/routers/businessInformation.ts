@@ -17,8 +17,20 @@ async function getBusinessProfileId(userId: string) {
     .then((v) => v[0]);
 
   if (!profile) {
-    throw new ORPCError('User does not have a business profile');
+    const createProfile = await db
+      .insert(businessProfile)
+      .values({ userId, companyName: '', email: '', linkedin: '', twitter: '' })
+      .returning()
+      .then((v) => v[0]);
+
+    if (!createProfile) {
+      throw new Error(
+        'User do not have a business profile and cannnot be created'
+      );
+    }
+    return createProfile.id;
   }
+
   return profile.id;
 }
 
@@ -76,14 +88,30 @@ export const createUpdateBusinessInformation = protectedProcedure
 export const getUserBusinessInformation = protectedProcedure.handler(
   async ({ context }) => {
     const { user } = context.session;
-    const businessProfileId = await getBusinessProfileId(user.id);
 
+    const businessProfileId = await getBusinessProfileId(user.id);
     const infoData = await db
       .select()
       .from(businessInformation)
       .where(eq(businessInformation.businessProfileId, businessProfileId))
       .then((v) => v[0]);
 
+    if (!infoData) {
+      const createInfo = await db
+        .insert(businessInformation)
+        .values({
+          businessProfileId,
+        })
+        .returning()
+        .then((v) => v[0]);
+
+      if (!createInfo) {
+        throw new Error(
+          'User do not have a business information and cannnot be created'
+        );
+      }
+      return createInfo;
+    }
     return infoData;
   }
 );

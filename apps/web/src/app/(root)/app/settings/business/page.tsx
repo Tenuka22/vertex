@@ -1,12 +1,11 @@
 'use client';
-
 import type {
   BusinessInformation,
   BusinessProfile,
 } from '@repo/db/schema/primary';
-import { format } from 'date-fns';
 import {
   Activity,
+  AlertCircle,
   Book,
   Building2,
   Calendar,
@@ -15,6 +14,8 @@ import {
   FileText,
   Globe,
   Linkedin,
+  Loader2,
+  type LucideIcon,
   Mail,
   Palette,
   Phone,
@@ -24,6 +25,7 @@ import {
   Users,
 } from 'lucide-react';
 import Link from 'next/link';
+import { useMemo } from 'react';
 import { BusinessInformationForm } from '@/components/business/business-information-form';
 import { BusinessProfileForm } from '@/components/business/business-profile-form';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -39,42 +41,120 @@ import {
 } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
+import {
+  useUserBusinessInformation,
+  useUserBusinessProfile,
+} from '@/hooks/business';
 
 type BusinessData = BusinessProfile & BusinessInformation;
+type PartialBusinessData = Partial<BusinessProfile> &
+  Partial<BusinessInformation>;
 
-const CompanyHeader = ({ data }: { data: BusinessProfile }) => (
+const LoadingSkeleton = ({ className = '' }: { className?: string }) => (
+  <div className={`animate-pulse rounded bg-muted ${className}`} />
+);
+
+const LoadingCard = ({ title }: { title: string }) => (
   <Card className="shadow-md">
-    <CardHeader className="flex items-center gap-4">
-      <Avatar className="h-16 w-16 shadow-md">
-        <AvatarImage alt="Logo" src={data.logoUrl ?? undefined} />
-        <AvatarFallback className="font-bold text-lg">
-          {data.companyName?.substring(0, 2).toUpperCase()}
-        </AvatarFallback>
-      </Avatar>
-      <div className="flex flex-col gap-2">
-        <CardTitle className="text-lg">{data.companyName}</CardTitle>
-        <CardDescription>{data.description}</CardDescription>
-        <CardAction className="mt-1 flex gap-2">
-          {data.isVerified && (
-            <Badge className="gap-1" variant="secondary">
-              <Shield className="h-3 w-3" /> Verified
-            </Badge>
-          )}
-          <Badge
-            className="gap-1"
-            variant={data.isActive ? 'default' : 'destructive'}
-          >
-            <Activity className="h-3 w-3" />
-            {data.isActive ? 'Active' : 'Inactive'}
-          </Badge>
-          {data.tradingName && (
-            <Badge variant="outline">{data.tradingName}</Badge>
-          )}
-        </CardAction>
-      </div>
+    <CardHeader>
+      <CardTitle className="flex items-center gap-2">
+        <Loader2 className="h-5 w-5 animate-spin" />
+        {title}
+      </CardTitle>
     </CardHeader>
+    <CardContent className="space-y-4">
+      <LoadingSkeleton className="h-4 w-3/4" />
+      <LoadingSkeleton className="h-4 w-1/2" />
+      <LoadingSkeleton className="h-4 w-2/3" />
+    </CardContent>
   </Card>
 );
+
+const EmptyStateCard = ({
+  title,
+  description,
+  icon: Icon,
+}: {
+  title: string;
+  description: string;
+  icon: LucideIcon;
+}) => (
+  <Card className="shadow-md">
+    <CardHeader>
+      <CardTitle className="flex items-center gap-2">
+        <Icon className="h-5 w-5" />
+        {title}
+      </CardTitle>
+    </CardHeader>
+    <CardContent className="py-8 text-center">
+      <AlertCircle className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
+      <p className="text-muted-foreground">{description}</p>
+    </CardContent>
+  </Card>
+);
+
+const CompanyHeader = ({ data }: { data: PartialBusinessData }) => {
+  if (!data.companyName) {
+    return (
+      <Card className="shadow-md">
+        <CardHeader className="flex items-center gap-4">
+          <Avatar className="h-16 w-16 shadow-md">
+            <AvatarFallback>
+              <Building2 className="h-8 w-8" />
+            </AvatarFallback>
+          </Avatar>
+          <div className="flex flex-col gap-2">
+            <CardTitle className="text-lg text-muted-foreground">
+              No Company Information
+            </CardTitle>
+            <CardDescription>
+              Please complete your business profile to get started.
+            </CardDescription>
+            <CardAction className="mt-1 flex gap-2">
+              <Badge variant="outline">Setup Required</Badge>
+            </CardAction>
+          </div>
+        </CardHeader>
+      </Card>
+    );
+  }
+
+  return (
+    <Card className="shadow-md">
+      <CardHeader className="flex items-center gap-4">
+        <Avatar className="h-16 w-16 shadow-md">
+          <AvatarImage alt="Logo" src={data.logoUrl ?? undefined} />
+          <AvatarFallback className="font-bold text-lg">
+            {data.companyName?.substring(0, 2).toUpperCase()}
+          </AvatarFallback>
+        </Avatar>
+        <div className="flex flex-col gap-2">
+          <CardTitle className="text-lg">{data.companyName}</CardTitle>
+          <CardDescription>
+            {data.description || 'No description provided'}
+          </CardDescription>
+          <CardAction className="mt-1 flex gap-2">
+            {data.isVerified && (
+              <Badge className="gap-1" variant="secondary">
+                <Shield className="h-3 w-3" /> Verified
+              </Badge>
+            )}
+            <Badge
+              className="gap-1"
+              variant={data.isActive ? 'default' : 'destructive'}
+            >
+              <Activity className="h-3 w-3" />
+              {data.isActive ? 'Active' : 'Inactive'}
+            </Badge>
+            {data.tradingName && (
+              <Badge variant="outline">{data.tradingName}</Badge>
+            )}
+          </CardAction>
+        </div>
+      </CardHeader>
+    </Card>
+  );
+};
 
 const InfoRow = ({
   label,
@@ -94,70 +174,92 @@ const InfoRow = ({
   </div>
 );
 
-const CompanyOverview = ({ data }: { data: BusinessData }) => (
-  <Card className="shadow-md">
-    <CardHeader>
-      <CardTitle className="flex items-center gap-2">
-        <Building2 className="h-5 w-5" /> Company Overview
-      </CardTitle>
-    </CardHeader>
-    <CardContent className="space-y-6">
-      <div className="grid gap-6 sm:grid-cols-2">
-        <InfoRow label="Company Name" value={data.companyName} />
-        {data.legalName && (
-          <InfoRow label="Legal Name" value={data.legalName} />
-        )}
-        {data.businessType && (
-          <InfoRow
-            label="Business Type"
-            value={<Badge variant="outline">{data.businessType}</Badge>}
-          />
-        )}
-        {data.industry && (
-          <InfoRow
-            label="Industry"
-            value={<Badge variant="outline">{data.industry}</Badge>}
-          />
-        )}
-        {data.foundedYear && (
-          <InfoRow label="Founded" value={data.foundedYear} />
-        )}
-        {data.employeeCount && (
-          <InfoRow
-            icon={<Users className="h-4 w-4 text-muted-foreground" />}
-            label="Employees"
-            value={data.employeeCount.toLocaleString()}
-          />
-        )}
-        {data.taxId && <InfoRow label="Tax ID" value={data.taxId} />}
-        {data.registrationNumber && (
-          <InfoRow label="Reg. No." value={data.registrationNumber} />
-        )}
-        {data.businessLicense && (
-          <InfoRow
-            icon={<Book className="h-4 w-4 text-muted-foreground" />}
-            label="Business License"
-            value={data.businessLicense}
-          />
-        )}
-      </div>
-      {data.description && (
-        <>
-          <Separator />
-          <div className="space-y-2">
-            <Label className="font-medium text-muted-foreground text-sm">
-              Description
-            </Label>
-            <p className="text-sm leading-relaxed">{data.description}</p>
-          </div>
-        </>
-      )}
-    </CardContent>
-  </Card>
-);
+const CompanyOverview = ({ data }: { data: PartialBusinessData }) => {
+  if (!data.companyName) {
+    return (
+      <EmptyStateCard
+        description="Complete your business profile to see company information here."
+        icon={Building2}
+        title="Company Overview"
+      />
+    );
+  }
 
-const MissionVision = ({ data }: { data: BusinessData }) =>
-  data.mission || data.vision ? (
+  return (
+    <Card className="shadow-md">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Building2 className="h-5 w-5" /> Company Overview
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <div className="grid gap-6 sm:grid-cols-2">
+          <InfoRow label="Company Name" value={data.companyName} />
+          {data.legalName && (
+            <InfoRow label="Legal Name" value={data.legalName} />
+          )}
+          {data.businessType && (
+            <InfoRow
+              label="Business Type"
+              value={<Badge variant="outline">{data.businessType}</Badge>}
+            />
+          )}
+          {data.industry && (
+            <InfoRow
+              label="Industry"
+              value={<Badge variant="outline">{data.industry}</Badge>}
+            />
+          )}
+          {data.foundedYear && (
+            <InfoRow label="Founded" value={data.foundedYear} />
+          )}
+          {data.employeeCount && (
+            <InfoRow
+              icon={<Users className="h-4 w-4 text-muted-foreground" />}
+              label="Employees"
+              value={data.employeeCount.toLocaleString()}
+            />
+          )}
+          {data.taxId && <InfoRow label="Tax ID" value={data.taxId} />}
+          {data.registrationNumber && (
+            <InfoRow label="Reg. No." value={data.registrationNumber} />
+          )}
+          {data.businessLicense && (
+            <InfoRow
+              icon={<Book className="h-4 w-4 text-muted-foreground" />}
+              label="Business License"
+              value={data.businessLicense}
+            />
+          )}
+        </div>
+        {data.description && (
+          <>
+            <Separator />
+            <div className="space-y-2">
+              <Label className="font-medium text-muted-foreground text-sm">
+                Description
+              </Label>
+              <p className="text-sm leading-relaxed">{data.description}</p>
+            </div>
+          </>
+        )}
+      </CardContent>
+    </Card>
+  );
+};
+
+const MissionVision = ({ data }: { data: PartialBusinessData }) => {
+  if (!(data.mission || data.vision)) {
+    return (
+      <EmptyStateCard
+        description="Add your company's mission and vision statements to inspire your team."
+        icon={Target}
+        title="Mission & Vision"
+      />
+    );
+  }
+
+  return (
     <Card className="shadow-md">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
@@ -184,20 +286,21 @@ const MissionVision = ({ data }: { data: BusinessData }) =>
         )}
       </CardContent>
     </Card>
-  ) : null;
+  );
+};
 
-const ContactCard = ({ data }: { data: BusinessData }) => {
+const ContactCard = ({ data }: { data: PartialBusinessData }) => {
   const contactItems = [
     {
       label: 'Email',
       value: data.email,
-      href: `mailto:${data.email}`,
+      href: data.email ? `mailto:${data.email}` : undefined,
       icon: <Mail className="h-4 w-4 text-primary" />,
     },
     {
       label: 'Phone',
       value: data.phone,
-      href: `tel:${data.phone}`,
+      href: data.phone ? `tel:${data.phone}` : undefined,
       icon: <Phone className="h-4 w-4 text-primary" />,
     },
     {
@@ -219,6 +322,16 @@ const ContactCard = ({ data }: { data: BusinessData }) => {
       icon: <Linkedin className="h-4 w-4 text-primary" />,
     },
   ].filter((i) => i.value);
+
+  if (contactItems.length === 0) {
+    return (
+      <EmptyStateCard
+        description="Add your contact details to make it easy for customers to reach you."
+        icon={Mail}
+        title="Contact Information"
+      />
+    );
+  }
 
   return (
     <Card className="shadow-md">
@@ -265,8 +378,18 @@ const ContactCard = ({ data }: { data: BusinessData }) => {
   );
 };
 
-const BrandSettings = ({ data }: { data: BusinessData }) =>
-  data.brandColor ? (
+const BrandSettings = ({ data }: { data: PartialBusinessData }) => {
+  if (!data.brandColor) {
+    return (
+      <EmptyStateCard
+        description="Set your brand colors and visual identity to personalize your experience."
+        icon={Palette}
+        title="Brand & Settings"
+      />
+    );
+  }
+
+  return (
     <Card className="shadow-md">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
@@ -285,157 +408,219 @@ const BrandSettings = ({ data }: { data: BusinessData }) =>
         </div>
       </CardContent>
     </Card>
-  ) : null;
+  );
+};
 
-const AccountSettings = ({ data }: { data: BusinessData }) => (
-  <Card className="shadow-md">
-    <CardHeader>
-      <CardTitle className="flex items-center gap-2">
-        <CreditCard className="h-5 w-5" /> Financial & Settings
-      </CardTitle>
-    </CardHeader>
-    <CardContent className="space-y-2">
-      {data.baseCurrency && (
-        <InfoRow
-          icon={<CreditCard className="h-4 w-4 text-muted-foreground" />}
-          label="Base Currency"
-          value={data.baseCurrency}
-        />
-      )}
-      {data.fiscalYearEnd && (
-        <InfoRow label="Fiscal Year End" value={data.fiscalYearEnd} />
-      )}
-      {data.defaultBankAccount && (
-        <InfoRow label="Bank Account" value={data.defaultBankAccount} />
-      )}
-      {data.timezone && (
-        <InfoRow
-          icon={<Clock className="h-4 w-4 text-muted-foreground" />}
-          label="Timezone"
-          value={data.timezone}
-        />
-      )}
-      {data.dateFormat && (
-        <InfoRow label="Date Format" value={data.dateFormat} />
-      )}
-      {data.numberFormat && (
-        <InfoRow label="Number Format" value={data.numberFormat} />
-      )}
-      {data.businessHoursStart && data.businessHoursEnd && (
-        <InfoRow
-          icon={<Clock className="h-4 w-4 text-muted-foreground" />}
-          label="Business Hours"
-          value={`${data.businessHoursStart} - ${data.businessHoursEnd}`}
-        />
-      )}
-      {data.operatingDays && (
-        <InfoRow label="Operating Days" value={data.operatingDays} />
-      )}
-      {data.certifications && (
-        <InfoRow
-          icon={<Book className="h-4 w-4 text-muted-foreground" />}
-          label="Certifications"
-          value={data.certifications}
-        />
-      )}
-      {data.complianceNotes && (
-        <InfoRow
-          icon={<FileText className="h-4 w-4 text-muted-foreground" />}
-          label="Compliance Notes"
-          value={data.complianceNotes}
-        />
-      )}
-      {data.internalNotes && (
-        <InfoRow
-          icon={<FileText className="h-4 w-4 text-muted-foreground" />}
-          label="Internal Notes"
-          value={data.internalNotes}
-        />
-      )}
-    </CardContent>
-  </Card>
-);
+const AccountSettings = ({ data }: { data: PartialBusinessData }) => {
+  const hasSettings =
+    data.baseCurrency ||
+    data.fiscalYearEnd ||
+    data.defaultBankAccount ||
+    data.timezone ||
+    data.dateFormat ||
+    data.numberFormat ||
+    data.businessHoursStart ||
+    data.businessHoursEnd ||
+    data.operatingDays ||
+    data.certifications ||
+    data.complianceNotes ||
+    data.internalNotes;
 
-const Timeline = ({ data }: { data: BusinessData }) => (
-  <Card className="shadow-md">
-    <CardHeader>
-      <CardTitle className="flex items-center gap-2">
-        <Calendar className="h-5 w-5" /> Account Timeline
-      </CardTitle>
-    </CardHeader>
-    <CardContent className="space-y-4">
-      <div>
-        <Label className="font-medium text-muted-foreground text-xs uppercase">
-          Created
-        </Label>
-        <p className="font-medium text-sm">
-          {format(data.createdAt, 'dd/MM/yy')}
-        </p>
-      </div>
-      <Separator />
-      <div>
-        <Label className="font-medium text-muted-foreground text-xs uppercase">
-          Last Updated
-        </Label>
-        <p className="font-medium text-sm">
-          {format(data.updatedAt, 'dd/MM/yy')}
-        </p>
-      </div>
-    </CardContent>
-  </Card>
-);
+  if (!hasSettings) {
+    return (
+      <EmptyStateCard
+        description="Configure your financial and operational settings for better business management."
+        icon={CreditCard}
+        title="Financial & Settings"
+      />
+    );
+  }
+
+  return (
+    <Card className="shadow-md">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <CreditCard className="h-5 w-5" /> Financial & Settings
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-2">
+        {data.baseCurrency && (
+          <InfoRow
+            icon={<CreditCard className="h-4 w-4 text-muted-foreground" />}
+            label="Base Currency"
+            value={data.baseCurrency}
+          />
+        )}
+        {data.fiscalYearEnd && (
+          <InfoRow label="Fiscal Year End" value={data.fiscalYearEnd} />
+        )}
+        {data.defaultBankAccount && (
+          <InfoRow label="Bank Account" value={data.defaultBankAccount} />
+        )}
+        {data.timezone && (
+          <InfoRow
+            icon={<Clock className="h-4 w-4 text-muted-foreground" />}
+            label="Timezone"
+            value={data.timezone}
+          />
+        )}
+        {data.dateFormat && (
+          <InfoRow label="Date Format" value={data.dateFormat} />
+        )}
+        {data.numberFormat && (
+          <InfoRow label="Number Format" value={data.numberFormat} />
+        )}
+        {data.businessHoursStart && data.businessHoursEnd && (
+          <InfoRow
+            icon={<Clock className="h-4 w-4 text-muted-foreground" />}
+            label="Business Hours"
+            value={`${data.businessHoursStart} - ${data.businessHoursEnd}`}
+          />
+        )}
+        {data.operatingDays && (
+          <InfoRow label="Operating Days" value={data.operatingDays} />
+        )}
+        {data.certifications && (
+          <InfoRow
+            icon={<Book className="h-4 w-4 text-muted-foreground" />}
+            label="Certifications"
+            value={data.certifications}
+          />
+        )}
+        {data.complianceNotes && (
+          <InfoRow
+            icon={<FileText className="h-4 w-4 text-muted-foreground" />}
+            label="Compliance Notes"
+            value={data.complianceNotes}
+          />
+        )}
+        {data.internalNotes && (
+          <InfoRow
+            icon={<FileText className="h-4 w-4 text-muted-foreground" />}
+            label="Internal Notes"
+            value={data.internalNotes}
+          />
+        )}
+      </CardContent>
+    </Card>
+  );
+};
+
+const Timeline = ({ data }: { data: PartialBusinessData }) => {
+  if (!(data.createdAt || data.updatedAt)) {
+    return (
+      <EmptyStateCard
+        description="Timeline information will appear once your business profile is created."
+        icon={Calendar}
+        title="Account Timeline"
+      />
+    );
+  }
+
+  return (
+    <Card className="shadow-md">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Calendar className="h-5 w-5" /> Account Timeline
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {data.createdAt && (
+          <div>
+            <Label className="font-medium text-muted-foreground text-xs uppercase">
+              Created
+            </Label>
+            <p className="font-medium text-sm">{data.createdAt.toString()}</p>
+          </div>
+        )}
+        {data.createdAt && data.updatedAt && <Separator />}
+        {data.updatedAt && (
+          <div>
+            <Label className="font-medium text-muted-foreground text-xs uppercase">
+              Last Updated
+            </Label>
+            <p className="font-medium text-sm">{data.updatedAt.toString()}</p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+};
 
 const COMPANY_PAGE = () => {
-  const business = {
-    id: '11111111-1111-1111-1111-111111111111',
-    userId: 'user-123',
-    companyName: 'Acme Corporation',
-    legalName: 'Acme Corporation Ltd.',
-    tradingName: 'Acme Corp',
-    email: 'info@acme.com',
-    phone: '+1-555-1234',
-    website: 'https://www.acme.com',
-    twitter: 'https://twitter.com/acme',
-    linkedin: 'https://linkedin.com/company/acme',
-    addressLine1: '123 Main Street',
-    addressLine2: 'Suite 400',
-    city: 'Metropolis',
-    state: 'CA',
-    postalCode: '90210',
-    country: 'USA',
-    industry: 'Technology',
-    businessType: 'Software',
-    employeeCount: 250,
-    foundedYear: 2005,
-    logoUrl: 'https://www.acme.com/logo.png',
-    brandColor: '#FF5733',
-    description:
-      'Acme Corporation develops cutting-edge software solutions worldwide.',
-    mission: 'To deliver innovative software products worldwide.',
-    vision: 'To be the global leader in software solutions.',
-    taxId: 'TAX-123456',
-    registrationNumber: 'REG-987654',
-    isActive: true,
-    isVerified: true,
-    createdAt: new Date('2020-01-01T00:00:00Z'),
-    updatedAt: new Date('2025-01-01T00:00:00Z'),
+  const {
+    data: businessInfo,
+    isLoading: isLoadingInfo,
+    error: infoError,
+  } = useUserBusinessInformation();
+  const {
+    data: businessProfile,
+    isLoading: isLoadingProfile,
+    error: profileError,
+  } = useUserBusinessProfile();
 
-    businessProfileId: '11111111-1111-1111-1111-111111111111',
-    businessLicense: null,
-    baseCurrency: 'USD',
-    fiscalYearEnd: '12/31',
-    defaultBankAccount: null,
-    timezone: 'UTC',
-    dateFormat: 'MM/dd/yyyy',
-    numberFormat: 'en-US',
-    businessHoursStart: '09:00',
-    businessHoursEnd: '17:00',
-    operatingDays: 'Mon-Fri',
-    certifications: null,
-    complianceNotes: null,
-    socialMediaLinks: null,
-    internalNotes: null,
-  } satisfies BusinessData;
+  const business = useMemo(
+    () => ({
+      ...businessInfo,
+      ...businessProfile,
+    }),
+    [businessInfo, businessProfile]
+  );
+
+  const isLoading = isLoadingInfo || isLoadingProfile;
+  const hasError = infoError || profileError;
+
+  if (isLoading) {
+    return (
+      <main className="space-y-8 p-6">
+        <Card className="shadow-md">
+          <CardHeader className="flex items-center gap-4">
+            <LoadingSkeleton className="h-16 w-16 rounded-full" />
+            <div className="flex flex-1 flex-col gap-2">
+              <LoadingSkeleton className="h-6 w-48" />
+              <LoadingSkeleton className="h-4 w-64" />
+              <LoadingSkeleton className="h-6 w-32" />
+            </div>
+          </CardHeader>
+        </Card>
+        <div className="grid gap-4 lg:grid-cols-2">
+          <div className="space-y-6 xl:col-span-2">
+            <LoadingCard title="Loading Company Overview..." />
+            <LoadingCard title="Loading Contact Information..." />
+            <LoadingCard title="Loading Account Settings..." />
+          </div>
+          <div className="relative h-full min-h-screen">
+            <div className="sticky top-4 space-y-6 pb-4">
+              <LoadingCard title="Business Profile Form" />
+              <LoadingCard title="Business Information Form" />
+            </div>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  if (hasError) {
+    return (
+      <main className="space-y-8 p-6">
+        <Card>
+          <AlertCircle className="h-4 w-4" />
+          <CardDescription>
+            There was an error loading your business information. Please try
+            refreshing the page.
+          </CardDescription>
+        </Card>
+        <div className="grid gap-4 lg:grid-cols-2">
+          <div className="relative h-full min-h-screen">
+            <div className="sticky top-4 space-y-6 pb-4">
+              <BusinessProfileForm />
+              <BusinessInformationForm />
+            </div>
+          </div>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="space-y-8 p-6">
@@ -451,8 +636,12 @@ const COMPANY_PAGE = () => {
         </div>
         <div className="relative h-full min-h-screen">
           <div className="sticky top-4 space-y-6 pb-4">
-            <BusinessProfileForm defaultData={business} />
-            <BusinessInformationForm defaultData={business} />
+            <BusinessProfileForm
+              defaultData={business.id ? (business as BusinessData) : undefined}
+            />
+            <BusinessInformationForm
+              defaultData={business.id ? (business as BusinessData) : undefined}
+            />
           </div>
         </div>
       </div>
