@@ -13,17 +13,38 @@ import {
   deleteBusinessInformation,
   getUserBusinessInformation,
 } from './businessInformation';
-
 import {
   createUpdateBusinessLocation,
   deleteBusinessLocation,
   getBusinessLocations,
 } from './businessLocation';
 
+import {
+  createUpdatePaymentMethod,
+  deletePaymentMethod,
+  getUserPaymentMethods,
+} from './paymentMethods';
+
+import {
+  createUpdateTransaction,
+  deleteTransaction,
+  getUserTransactions,
+} from './transactions';
+
 export const appRouter = {
   healthCheck: publicProcedure.handler(() => {
     return 'OK';
   }),
+  transaction: {
+    createUpdate: createUpdateTransaction,
+    get: getUserTransactions,
+    delete: deleteTransaction,
+  },
+  payment: {
+    createUpdate: createUpdatePaymentMethod,
+    get: getUserPaymentMethods,
+    delete: deletePaymentMethod,
+  },
   businessProfile: {
     createUpdate: createUpdateBusinessProfile,
     get: getUserBusinessProfile,
