@@ -6,7 +6,6 @@ import {
   pgTable,
   text,
   timestamp,
-  uuid,
   varchar,
 } from 'drizzle-orm/pg-core';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
@@ -25,7 +24,9 @@ export * from './auth';
 export * from './enums';
 
 export const businessProfile = pgTable('business_profile', {
-  id: uuid('id').primaryKey().defaultRandom(),
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
   userId: text('userId')
     .notNull()
     .references(() => user.id),
@@ -67,8 +68,10 @@ export const businessProfile = pgTable('business_profile', {
 });
 
 export const businessInformation = pgTable('business_information', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  businessProfileId: uuid('business_profile_id')
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  businessProfileId: text('business_profile_id')
     .references(() => businessProfile.id, { onDelete: 'cascade' })
     .notNull(),
 
@@ -100,8 +103,10 @@ export const businessInformation = pgTable('business_information', {
 });
 
 export const businessContacts = pgTable('business_contacts', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  businessProfileId: uuid('business_profile_id')
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  businessProfileId: text('business_profile_id')
     .references(() => businessProfile.id, { onDelete: 'cascade' })
     .notNull(),
 
@@ -123,8 +128,10 @@ export const businessContacts = pgTable('business_contacts', {
 });
 
 export const businessLocations = pgTable('business_locations', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  businessProfileId: uuid('business_profile_id')
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  businessProfileId: text('business_profile_id')
     .references(() => businessProfile.id, { onDelete: 'cascade' })
     .notNull(),
 
@@ -152,8 +159,10 @@ export const businessLocations = pgTable('business_locations', {
 });
 
 export const expenseCategories = pgTable('expense_categories', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  businessProfileId: uuid('business_profile_id')
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  businessProfileId: text('business_profile_id')
     .references(() => businessProfile.id, { onDelete: 'cascade' })
     .notNull(),
   name: expenseCategoryEnum('name').notNull(),
@@ -164,8 +173,10 @@ export const expenseCategories = pgTable('expense_categories', {
 });
 
 export const expenses = pgTable('expenses', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  expenseCategoryId: uuid('expense_category_id')
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  expenseCategoryId: text('expense_category_id')
     .references(() => expenseCategories.id, { onDelete: 'cascade' })
     .notNull(),
   name: varchar('name', { length: 255 }).notNull(),
@@ -176,8 +187,10 @@ export const expenses = pgTable('expenses', {
 });
 
 export const paymentMethods = pgTable('payment_methods', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  businessProfileId: uuid('business_profile_id')
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  businessProfileId: text('business_profile_id')
     .references(() => businessProfile.id, { onDelete: 'cascade' })
     .notNull(),
 
@@ -190,14 +203,16 @@ export const paymentMethods = pgTable('payment_methods', {
 });
 
 export const transactions = pgTable('transactions', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  businessProfileId: uuid('business_profile_id')
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  businessProfileId: text('business_profile_id')
     .references(() => businessProfile.id, { onDelete: 'cascade' })
     .notNull(),
-  paymentMethodId: uuid('payment_method_id').references(
+  paymentMethodId: text('payment_method_id').references(
     () => paymentMethods.id
   ),
-  expenseCategoryId: uuid('expense_category_id').references(
+  expenseCategoryId: text('expense_category_id').references(
     () => expenseCategories.id
   ),
   type: transactionTypeEnum('type').notNull(),
@@ -211,12 +226,14 @@ export const transactions = pgTable('transactions', {
 });
 
 export const cashFlows = pgTable('cash_flows', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  businessProfileId: uuid('business_profile_id')
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  businessProfileId: text('business_profile_id')
     .references(() => businessProfile.id, { onDelete: 'cascade' })
     .notNull(),
 
-  transactionId: uuid('transaction_id')
+  transactionId: text('transaction_id')
     .references(() => transactions.id, { onDelete: 'cascade' })
     .notNull(),
 
@@ -229,8 +246,10 @@ export const cashFlows = pgTable('cash_flows', {
 });
 
 export const budgets = pgTable('budgets', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  businessProfileId: uuid('business_profile_id')
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  businessProfileId: text('business_profile_id')
     .references(() => businessProfile.id, { onDelete: 'cascade' })
     .notNull(),
 

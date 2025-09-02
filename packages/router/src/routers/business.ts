@@ -71,6 +71,9 @@ export const getUserBusinessProfile = protectedProcedure.handler(
       .where(eq(businessProfile.userId, user.id))
       .then((v) => v[0]);
 
+    if (!businessData) {
+      throw new Error('No Business profile found');
+    }
     return businessData;
   }
 );

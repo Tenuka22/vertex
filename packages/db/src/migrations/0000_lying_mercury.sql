@@ -4,8 +4,8 @@ CREATE TYPE "public"."expenseCategoryEnum" AS ENUM('VEHICLE', 'HOUSING', 'SALES'
 CREATE TYPE "public"."payment_method" AS ENUM('BANK', 'CASH', 'CARD_CREDIT', 'DIGITAL_WALLET', 'OTHER');--> statement-breakpoint
 CREATE TYPE "public"."transaction_type" AS ENUM('PAYMENT', 'PAYOUT');--> statement-breakpoint
 CREATE TABLE "budgets" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"business_profile_id" uuid NOT NULL,
+	"id" text PRIMARY KEY NOT NULL,
+	"business_profile_id" text NOT NULL,
 	"category" "budget_category" NOT NULL,
 	"allocated_amount" numeric(12, 2) NOT NULL,
 	"spent_amount" numeric(12, 2) NOT NULL,
@@ -16,8 +16,8 @@ CREATE TABLE "budgets" (
 );
 --> statement-breakpoint
 CREATE TABLE "business_contacts" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"business_profile_id" uuid NOT NULL,
+	"id" text PRIMARY KEY NOT NULL,
+	"business_profile_id" text NOT NULL,
 	"contact_type" varchar(50) NOT NULL,
 	"first_name" varchar(100) NOT NULL,
 	"last_name" varchar(100) NOT NULL,
@@ -33,8 +33,8 @@ CREATE TABLE "business_contacts" (
 );
 --> statement-breakpoint
 CREATE TABLE "business_information" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"business_profile_id" uuid NOT NULL,
+	"id" text PRIMARY KEY NOT NULL,
+	"business_profile_id" text NOT NULL,
 	"tax_id" varchar(50),
 	"registration_number" varchar(100),
 	"business_license" varchar(100),
@@ -56,8 +56,8 @@ CREATE TABLE "business_information" (
 );
 --> statement-breakpoint
 CREATE TABLE "business_locations" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"business_profile_id" uuid NOT NULL,
+	"id" text PRIMARY KEY NOT NULL,
+	"business_profile_id" text NOT NULL,
 	"location_name" varchar(255) NOT NULL,
 	"location_type" varchar(50),
 	"address_line_1" varchar(255) NOT NULL,
@@ -77,7 +77,7 @@ CREATE TABLE "business_locations" (
 );
 --> statement-breakpoint
 CREATE TABLE "business_profile" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"id" text PRIMARY KEY NOT NULL,
 	"userId" text NOT NULL,
 	"company_name" varchar(255) NOT NULL,
 	"legal_name" varchar(255),
@@ -109,9 +109,9 @@ CREATE TABLE "business_profile" (
 );
 --> statement-breakpoint
 CREATE TABLE "cash_flows" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"business_profile_id" uuid NOT NULL,
-	"transaction_id" uuid NOT NULL,
+	"id" text PRIMARY KEY NOT NULL,
+	"business_profile_id" text NOT NULL,
+	"transaction_id" text NOT NULL,
 	"cash_flow_direction" "cash_flow_direction" NOT NULL,
 	"amount" numeric(12, 2) NOT NULL,
 	"flow_date" timestamp DEFAULT now() NOT NULL,
@@ -120,8 +120,8 @@ CREATE TABLE "cash_flows" (
 );
 --> statement-breakpoint
 CREATE TABLE "expense_categories" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"business_profile_id" uuid NOT NULL,
+	"id" text PRIMARY KEY NOT NULL,
+	"business_profile_id" text NOT NULL,
 	"name" "expenseCategoryEnum" NOT NULL,
 	"status" varchar(20) DEFAULT 'active' NOT NULL,
 	"last_updated" timestamp DEFAULT now() NOT NULL,
@@ -130,8 +130,8 @@ CREATE TABLE "expense_categories" (
 );
 --> statement-breakpoint
 CREATE TABLE "expenses" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"expense_category_id" uuid NOT NULL,
+	"id" text PRIMARY KEY NOT NULL,
+	"expense_category_id" text NOT NULL,
 	"name" varchar(255) NOT NULL,
 	"frequency" varchar(50) NOT NULL,
 	"status" varchar(20) DEFAULT 'active' NOT NULL,
@@ -140,8 +140,8 @@ CREATE TABLE "expenses" (
 );
 --> statement-breakpoint
 CREATE TABLE "payment_methods" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"business_profile_id" uuid NOT NULL,
+	"id" text PRIMARY KEY NOT NULL,
+	"business_profile_id" text NOT NULL,
 	"payment_method_type" "payment_method" NOT NULL,
 	"details" jsonb,
 	"is_active" boolean DEFAULT true NOT NULL,
@@ -150,10 +150,10 @@ CREATE TABLE "payment_methods" (
 );
 --> statement-breakpoint
 CREATE TABLE "transactions" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"business_profile_id" uuid NOT NULL,
-	"payment_method_id" uuid,
-	"expense_category_id" uuid,
+	"id" text PRIMARY KEY NOT NULL,
+	"business_profile_id" text NOT NULL,
+	"payment_method_id" text,
+	"expense_category_id" text,
 	"type" "transaction_type" NOT NULL,
 	"amount" numeric(12, 2) NOT NULL,
 	"description" text,
@@ -161,6 +161,54 @@ CREATE TABLE "transactions" (
 	"reference" varchar(255),
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "account" (
+	"id" text PRIMARY KEY NOT NULL,
+	"account_id" text NOT NULL,
+	"provider_id" text NOT NULL,
+	"user_id" text NOT NULL,
+	"access_token" text,
+	"refresh_token" text,
+	"id_token" text,
+	"access_token_expires_at" timestamp,
+	"refresh_token_expires_at" timestamp,
+	"scope" text,
+	"password" text,
+	"created_at" timestamp NOT NULL,
+	"updated_at" timestamp NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "session" (
+	"id" text PRIMARY KEY NOT NULL,
+	"expires_at" timestamp NOT NULL,
+	"token" text NOT NULL,
+	"created_at" timestamp NOT NULL,
+	"updated_at" timestamp NOT NULL,
+	"ip_address" text,
+	"user_agent" text,
+	"user_id" text NOT NULL,
+	CONSTRAINT "session_token_unique" UNIQUE("token")
+);
+--> statement-breakpoint
+CREATE TABLE "user" (
+	"id" text PRIMARY KEY NOT NULL,
+	"name" text NOT NULL,
+	"email" text NOT NULL,
+	"email_verified" boolean NOT NULL,
+	"image" text,
+	"created_at" timestamp NOT NULL,
+	"updated_at" timestamp NOT NULL,
+	CONSTRAINT "user_email_unique" UNIQUE("email")
+);
+--> statement-breakpoint
+CREATE TABLE "verification" (
+	"id" text PRIMARY KEY NOT NULL,
+	"identifier" text NOT NULL,
+	"value" text NOT NULL,
+	"expires_at" timestamp NOT NULL,
+	"created_at" timestamp,
+	"updated_at" timestamp
 );
 --> statement-breakpoint
 ALTER TABLE "budgets" ADD CONSTRAINT "budgets_business_profile_id_business_profile_id_fk" FOREIGN KEY ("business_profile_id") REFERENCES "public"."business_profile"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
@@ -175,4 +223,6 @@ ALTER TABLE "expenses" ADD CONSTRAINT "expenses_expense_category_id_expense_cate
 ALTER TABLE "payment_methods" ADD CONSTRAINT "payment_methods_business_profile_id_business_profile_id_fk" FOREIGN KEY ("business_profile_id") REFERENCES "public"."business_profile"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "transactions" ADD CONSTRAINT "transactions_business_profile_id_business_profile_id_fk" FOREIGN KEY ("business_profile_id") REFERENCES "public"."business_profile"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "transactions" ADD CONSTRAINT "transactions_payment_method_id_payment_methods_id_fk" FOREIGN KEY ("payment_method_id") REFERENCES "public"."payment_methods"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "transactions" ADD CONSTRAINT "transactions_expense_category_id_expense_categories_id_fk" FOREIGN KEY ("expense_category_id") REFERENCES "public"."expense_categories"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "transactions" ADD CONSTRAINT "transactions_expense_category_id_expense_categories_id_fk" FOREIGN KEY ("expense_category_id") REFERENCES "public"."expense_categories"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "account" ADD CONSTRAINT "account_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "session" ADD CONSTRAINT "session_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;
