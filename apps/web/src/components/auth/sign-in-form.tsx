@@ -18,7 +18,6 @@ export const SignInForm = ({
   onSwitchToSignUp: () => void;
 }) => {
   const router = useRouter();
-  const { isPending: sessionLoading } = authClient.useSession();
 
   const form = useForm({
     defaultValues: {
@@ -46,14 +45,6 @@ export const SignInForm = ({
       onSubmit: signInSchema,
     },
   });
-
-  if (sessionLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <Loader />
-      </div>
-    );
-  }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">

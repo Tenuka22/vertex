@@ -18,7 +18,6 @@ export const SignUpForm = ({
   onSwitchToSignIn: () => void;
 }) => {
   const router = useRouter();
-  const { isPending } = authClient.useSession();
 
   const form = useForm({
     defaultValues: {
@@ -48,14 +47,6 @@ export const SignUpForm = ({
       onSubmit: signUpSchema,
     },
   });
-
-  if (isPending) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <Loader />
-      </div>
-    );
-  }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">

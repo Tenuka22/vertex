@@ -23,7 +23,7 @@
     "typescript": "^5"
   },
   "dependencies": {
-    "drizzle-orm": "^0.44.4",
+    "drizzle-orm": "^0.44.5",
     "drizzle-zod": "^0.8.3"
   }
 }

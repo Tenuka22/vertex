@@ -1,9 +1,9 @@
+import { db as creatDB } from '@repo/db';
 // biome-ignore lint/performance/noNamespaceImport: Drizzle Rule
 import * as schema from '@repo/db/schema/auth';
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { openAPI } from 'better-auth/plugins';
-import { drizzle } from 'drizzle-orm/node-postgres';
 
 export const authClient = ({
   BETTER_AUTH_SECRET,
@@ -21,7 +21,7 @@ export const authClient = ({
   BETTER_AUTH_URL: string;
 }) =>
   betterAuth({
-    database: drizzleAdapter(drizzle(DATABASE_URL), {
+    database: drizzleAdapter(creatDB({ DATABASE_URL }), {
       provider: 'pg',
 
       schema,
@@ -43,6 +43,12 @@ export const authClient = ({
         sameSite: 'none',
         secure: true,
         httpOnly: true,
+      },
+    },
+    emailVerification: {
+      sendVerificationEmail: async (e) => {
+        // biome-ignore lint/suspicious/noConsole: Need to console
+        await console.log(e);
       },
     },
     plugins: [

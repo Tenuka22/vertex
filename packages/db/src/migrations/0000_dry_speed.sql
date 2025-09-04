@@ -1,8 +1,20 @@
+CREATE TYPE "public"."balance_sheet_item_type" AS ENUM('ASSET', 'LIABILITY', 'EQUITY');--> statement-breakpoint
 CREATE TYPE "public"."budget_category" AS ENUM('MARKETING', 'OPERATIONS', 'PAYROLL', 'UTILITIES', 'MISCELLANEOUS');--> statement-breakpoint
 CREATE TYPE "public"."cash_flow_direction" AS ENUM('INCOMING', 'OUTGOING');--> statement-breakpoint
 CREATE TYPE "public"."expenseCategoryEnum" AS ENUM('VEHICLE', 'HOUSING', 'SALES', 'FOOD', 'SHOPPING', 'ENTERTAINMENT', 'EDUCATION', 'HEALTHCARE', 'SUPPLIES', 'OPTIONAL');--> statement-breakpoint
 CREATE TYPE "public"."payment_method" AS ENUM('BANK', 'CASH', 'CARD_CREDIT', 'DIGITAL_WALLET', 'OTHER');--> statement-breakpoint
 CREATE TYPE "public"."transaction_type" AS ENUM('PAYMENT', 'PAYOUT');--> statement-breakpoint
+CREATE TABLE "balance_sheet_items" (
+	"id" text PRIMARY KEY NOT NULL,
+	"business_profile_id" text NOT NULL,
+	"title" varchar(255) NOT NULL,
+	"description" text,
+	"amount" numeric(12, 2) NOT NULL,
+	"type" "balance_sheet_item_type" NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
 CREATE TABLE "budgets" (
 	"id" text PRIMARY KEY NOT NULL,
 	"business_profile_id" text NOT NULL,
@@ -105,7 +117,8 @@ CREATE TABLE "business_profile" (
 	"is_active" boolean DEFAULT true,
 	"is_verified" boolean DEFAULT false,
 	"created_at" timestamp DEFAULT now() NOT NULL,
-	"updated_at" timestamp DEFAULT now() NOT NULL
+	"updated_at" timestamp DEFAULT now() NOT NULL,
+	CONSTRAINT "business_profile_userId_unique" UNIQUE("userId")
 );
 --> statement-breakpoint
 CREATE TABLE "cash_flows" (
@@ -139,12 +152,90 @@ CREATE TABLE "expenses" (
 	"updated_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
+CREATE TABLE "goals" (
+	"id" text PRIMARY KEY NOT NULL,
+	"business_profile_id" text NOT NULL,
+	"title" varchar(255) NOT NULL,
+	"target_amount" numeric(12, 2) NOT NULL,
+	"current_amount" numeric(12, 2) DEFAULT '0' NOT NULL,
+	"deadline" timestamp NOT NULL,
+	"status" varchar(20) DEFAULT 'active' NOT NULL,
+	"category" varchar(100) NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "inventory" (
+	"id" text PRIMARY KEY NOT NULL,
+	"business_profile_id" text NOT NULL,
+	"product_id" text NOT NULL,
+	"quantity" integer DEFAULT 0 NOT NULL,
+	"min_stock_level" integer DEFAULT 0 NOT NULL,
+	"max_stock_level" integer DEFAULT 0 NOT NULL,
+	"unit_cost" numeric(12, 2),
+	"location" varchar(255),
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "invoices" (
+	"id" text PRIMARY KEY NOT NULL,
+	"business_profile_id" text NOT NULL,
+	"invoice_number" varchar(100) NOT NULL,
+	"customer" varchar(255) NOT NULL,
+	"amount" numeric(12, 2) NOT NULL,
+	"status" varchar(20) DEFAULT 'pending' NOT NULL,
+	"issue_date" timestamp DEFAULT now() NOT NULL,
+	"due_date" timestamp NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
 CREATE TABLE "payment_methods" (
 	"id" text PRIMARY KEY NOT NULL,
 	"business_profile_id" text NOT NULL,
 	"payment_method_type" "payment_method" NOT NULL,
 	"details" jsonb,
 	"is_active" boolean DEFAULT true NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "products" (
+	"id" text PRIMARY KEY NOT NULL,
+	"business_profile_id" text NOT NULL,
+	"name" varchar(255) NOT NULL,
+	"price" numeric(12, 2) NOT NULL,
+	"category" varchar(100) NOT NULL,
+	"type" varchar(50) DEFAULT 'Product' NOT NULL,
+	"status" varchar(20) DEFAULT 'active' NOT NULL,
+	"description" text,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "purchase_orders" (
+	"id" text PRIMARY KEY NOT NULL,
+	"business_profile_id" text NOT NULL,
+	"supplier_id" text NOT NULL,
+	"order_number" varchar(100) NOT NULL,
+	"total_amount" numeric(12, 2) NOT NULL,
+	"status" varchar(20) DEFAULT 'pending' NOT NULL,
+	"order_date" timestamp DEFAULT now() NOT NULL,
+	"expected_delivery" timestamp,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "suppliers" (
+	"id" text PRIMARY KEY NOT NULL,
+	"business_profile_id" text NOT NULL,
+	"name" varchar(255) NOT NULL,
+	"contact_person" varchar(255),
+	"email" varchar(255),
+	"phone" varchar(50),
+	"address" text,
+	"status" varchar(20) DEFAULT 'active' NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL
 );
@@ -211,6 +302,7 @@ CREATE TABLE "verification" (
 	"updated_at" timestamp
 );
 --> statement-breakpoint
+ALTER TABLE "balance_sheet_items" ADD CONSTRAINT "balance_sheet_items_business_profile_id_business_profile_id_fk" FOREIGN KEY ("business_profile_id") REFERENCES "public"."business_profile"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "budgets" ADD CONSTRAINT "budgets_business_profile_id_business_profile_id_fk" FOREIGN KEY ("business_profile_id") REFERENCES "public"."business_profile"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "business_contacts" ADD CONSTRAINT "business_contacts_business_profile_id_business_profile_id_fk" FOREIGN KEY ("business_profile_id") REFERENCES "public"."business_profile"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "business_information" ADD CONSTRAINT "business_information_business_profile_id_business_profile_id_fk" FOREIGN KEY ("business_profile_id") REFERENCES "public"."business_profile"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
@@ -220,7 +312,15 @@ ALTER TABLE "cash_flows" ADD CONSTRAINT "cash_flows_business_profile_id_business
 ALTER TABLE "cash_flows" ADD CONSTRAINT "cash_flows_transaction_id_transactions_id_fk" FOREIGN KEY ("transaction_id") REFERENCES "public"."transactions"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "expense_categories" ADD CONSTRAINT "expense_categories_business_profile_id_business_profile_id_fk" FOREIGN KEY ("business_profile_id") REFERENCES "public"."business_profile"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "expenses" ADD CONSTRAINT "expenses_expense_category_id_expense_categories_id_fk" FOREIGN KEY ("expense_category_id") REFERENCES "public"."expense_categories"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "goals" ADD CONSTRAINT "goals_business_profile_id_business_profile_id_fk" FOREIGN KEY ("business_profile_id") REFERENCES "public"."business_profile"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "inventory" ADD CONSTRAINT "inventory_business_profile_id_business_profile_id_fk" FOREIGN KEY ("business_profile_id") REFERENCES "public"."business_profile"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "inventory" ADD CONSTRAINT "inventory_product_id_products_id_fk" FOREIGN KEY ("product_id") REFERENCES "public"."products"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "invoices" ADD CONSTRAINT "invoices_business_profile_id_business_profile_id_fk" FOREIGN KEY ("business_profile_id") REFERENCES "public"."business_profile"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "payment_methods" ADD CONSTRAINT "payment_methods_business_profile_id_business_profile_id_fk" FOREIGN KEY ("business_profile_id") REFERENCES "public"."business_profile"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "products" ADD CONSTRAINT "products_business_profile_id_business_profile_id_fk" FOREIGN KEY ("business_profile_id") REFERENCES "public"."business_profile"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "purchase_orders" ADD CONSTRAINT "purchase_orders_business_profile_id_business_profile_id_fk" FOREIGN KEY ("business_profile_id") REFERENCES "public"."business_profile"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "purchase_orders" ADD CONSTRAINT "purchase_orders_supplier_id_suppliers_id_fk" FOREIGN KEY ("supplier_id") REFERENCES "public"."suppliers"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "suppliers" ADD CONSTRAINT "suppliers_business_profile_id_business_profile_id_fk" FOREIGN KEY ("business_profile_id") REFERENCES "public"."business_profile"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "transactions" ADD CONSTRAINT "transactions_business_profile_id_business_profile_id_fk" FOREIGN KEY ("business_profile_id") REFERENCES "public"."business_profile"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "transactions" ADD CONSTRAINT "transactions_payment_method_id_payment_methods_id_fk" FOREIGN KEY ("payment_method_id") REFERENCES "public"."payment_methods"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "transactions" ADD CONSTRAINT "transactions_expense_category_id_expense_categories_id_fk" FOREIGN KEY ("expense_category_id") REFERENCES "public"."expense_categories"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint

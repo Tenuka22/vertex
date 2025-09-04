@@ -30,6 +30,7 @@ export const businessProfile = pgTable('business_profile', {
     .$defaultFn(() => crypto.randomUUID()),
   userId: text('userId')
     .notNull()
+    .unique()
     .references(() => user.id),
 
   companyName: varchar('company_name', { length: 255 }).notNull(),

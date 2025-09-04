@@ -1,3 +1,3 @@
 import { authClient } from './auth-client';
 
-authClient({ ...process.env });
+export const auth = authClient({ ...process.env });
