@@ -21,7 +21,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Separator } from '@/components/ui/separator';
-import { useUserTransactions } from '@/hooks/transactions';
+import { useUserTransactions } from '@/hooks/payments';
 
 const LoadingSkeleton = ({ className = '' }: { className?: string }) => (
   <div className={`animate-pulse rounded bg-muted ${className}`} />
@@ -61,7 +61,7 @@ const EmptyStateCard = () => (
 );
 
 const TRANSACTIONS_PAGE = () => {
-  const { data: transactions = [], isLoading, error } = useUserTransactions();
+  const { data: transactions, isLoading, error } = useUserTransactions();
 
   const getTransactionIcon = (type: string) =>
     type === 'PAYMENT' ? (

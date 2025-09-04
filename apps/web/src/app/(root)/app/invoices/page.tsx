@@ -1,4 +1,5 @@
 // app/invoices/page.tsx
+'use client';
 
 import {
   Calendar,
@@ -19,45 +20,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Separator } from '@/components/ui/separator';
-
-const invoices = [
-  {
-    id: 'inv1',
-    customer: 'John Doe',
-    amount: 1200,
-    status: 'paid',
-    issueDate: '2025-08-20',
-    dueDate: '2025-08-30',
-    invoiceNumber: 'INV-001',
-  },
-  {
-    id: 'inv2',
-    customer: 'Jane Smith',
-    amount: 450,
-    status: 'pending',
-    issueDate: '2025-08-18',
-    dueDate: '2025-09-01',
-    invoiceNumber: 'INV-002',
-  },
-  {
-    id: 'inv3',
-    customer: 'Michael Johnson',
-    amount: 980,
-    status: 'overdue',
-    issueDate: '2025-07-28',
-    dueDate: '2025-08-10',
-    invoiceNumber: 'INV-003',
-  },
-  {
-    id: 'inv4',
-    customer: 'Alice Brown',
-    amount: 2100,
-    status: 'paid',
-    issueDate: '2025-08-15',
-    dueDate: '2025-08-25',
-    invoiceNumber: 'INV-004',
-  },
-];
+import { useUserInvoices } from '@/hooks/invoices';
 
 const getStatusBadge = (status: string) => {
   switch (status) {
@@ -72,14 +35,16 @@ const getStatusBadge = (status: string) => {
   }
 };
 
-const formatDate = (date: string) => {
-  return new Date(date).toLocaleDateString('en-US', {
+const formatDate = (date: string | Date) => {
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  return dateObj.toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric',
   });
 };
 
 const InvoicesPage = () => {
+  const { data: invoices } = useUserInvoices();
   return (
     <main className="relative space-y-8 p-6">
       {/* Header */}
@@ -160,7 +125,9 @@ const InvoicesPage = () => {
                 <div className="flex items-center justify-between font-semibold text-lg">
                   <span className="flex items-center gap-1">
                     <DollarSign className="h-4 w-4" />
-                    {invoice.amount}
+                    {typeof invoice.amount === 'string'
+                      ? Number.parseFloat(invoice.amount)
+                      : invoice.amount}
                   </span>
                 </div>
               </CardContent>

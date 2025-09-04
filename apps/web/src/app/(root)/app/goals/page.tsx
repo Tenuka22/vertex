@@ -1,3 +1,5 @@
+'use client';
+
 import { ChevronDown, DollarSign, Filter, Plus, Target } from 'lucide-react';
 import { H2, Muted, P } from '@/components/design/typography';
 import { Badge } from '@/components/ui/badge';
@@ -10,50 +12,16 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Separator } from '@/components/ui/separator';
+import { useUserGoals } from '@/hooks/goals';
 import { cn } from '@/lib/utils';
 
 const GOALS_PAGE = () => {
-  const goals = [
-    {
-      id: '1',
-      title: 'Emergency Fund',
-      targetAmount: 5000,
-      currentAmount: 3200,
-      deadline: '2025-12-31',
-      status: 'active',
-      category: 'Savings',
-    },
-    {
-      id: '2',
-      title: 'Vacation Trip',
-      targetAmount: 3000,
-      currentAmount: 1500,
-      deadline: '2025-10-15',
-      status: 'active',
-      category: 'Travel',
-    },
-    {
-      id: '3',
-      title: 'New Laptop',
-      targetAmount: 2000,
-      currentAmount: 2000,
-      deadline: '2025-09-30',
-      status: 'completed',
-      category: 'Tech',
-    },
-    {
-      id: '4',
-      title: 'Home Renovation',
-      targetAmount: 10_000,
-      currentAmount: 4000,
-      deadline: '2026-03-01',
-      status: 'active',
-      category: 'Home',
-    },
-  ];
+  const { data: goals } = useUserGoals();
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+  const formatDate = (dateString: string | Date) => {
+    const date =
+      typeof dateString === 'string' ? new Date(dateString) : dateString;
+    return date.toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
       year: 'numeric',
@@ -73,11 +41,20 @@ const GOALS_PAGE = () => {
 
   const MAX_PROGRESS = 100;
 
-  const getProgress = (goal: { currentAmount: number; targetAmount: number }) =>
-    Math.min(
-      (goal.currentAmount / goal.targetAmount) * MAX_PROGRESS,
-      MAX_PROGRESS
-    );
+  const getProgress = (goal: {
+    currentAmount: string | number;
+    targetAmount: string | number;
+  }) => {
+    const current =
+      typeof goal.currentAmount === 'string'
+        ? Number.parseFloat(goal.currentAmount)
+        : goal.currentAmount;
+    const target =
+      typeof goal.targetAmount === 'string'
+        ? Number.parseFloat(goal.targetAmount)
+        : goal.targetAmount;
+    return Math.min((current / target) * MAX_PROGRESS, MAX_PROGRESS);
+  };
 
   return (
     <main className="relative space-y-8 p-6">
@@ -152,9 +129,19 @@ const GOALS_PAGE = () => {
                 <div className="flex justify-between text-sm">
                   <div className="flex items-center gap-1">
                     <DollarSign className="h-3 w-3" />
-                    <span>${goal.currentAmount}</span>
+                    <span>
+                      $
+                      {typeof goal.currentAmount === 'string'
+                        ? Number.parseFloat(goal.currentAmount)
+                        : goal.currentAmount}
+                    </span>
                   </div>
-                  <span>of ${goal.targetAmount}</span>
+                  <span>
+                    of $
+                    {typeof goal.targetAmount === 'string'
+                      ? Number.parseFloat(goal.targetAmount)
+                      : goal.targetAmount}
+                  </span>
                 </div>
                 <div className="h-2 w-full rounded-full bg-muted">
                   <div

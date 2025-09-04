@@ -1,3 +1,5 @@
+'use client';
+
 import {
   Building,
   ChevronDown,
@@ -17,54 +19,10 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Separator } from '@/components/ui/separator';
+import { useUserSuppliers } from '@/hooks/inventory';
 
 const SUPPLIERS_PAGE = () => {
-  const suppliers = [
-    {
-      id: 's1',
-      name: 'Global Supplies Inc.',
-      type: 'Material Supplier',
-      category: 'Packaging',
-      contact: '+1-202-555-0183',
-      status: 'active',
-      lastUpdated: '2025-08-29',
-      description:
-        'Provides packaging materials including boxes, labels, and shipping supplies.',
-    },
-    {
-      id: 's2',
-      name: 'Fresh Produce Co.',
-      type: 'Raw Materials',
-      category: 'Food Ingredients',
-      contact: '+1-202-555-0199',
-      status: 'active',
-      lastUpdated: '2025-08-27',
-      description:
-        'Organic produce supplier for all raw ingredients needed in product creation.',
-    },
-    {
-      id: 's3',
-      name: 'TechParts Warehouse',
-      type: 'Component Supplier',
-      category: 'Electronics',
-      contact: '+1-202-555-0101',
-      status: 'inactive',
-      lastUpdated: '2025-08-20',
-      description:
-        'Supplier of electronic components and spare parts for devices and kits.',
-    },
-    {
-      id: 's4',
-      name: 'Local Artisan Collective',
-      type: 'Specialty Supplier',
-      category: 'Handmade Goods',
-      contact: '+1-202-555-0112',
-      status: 'active',
-      lastUpdated: '2025-08-21',
-      description:
-        'Handcrafted items and specialty materials from local artisans.',
-    },
-  ];
+  const { data: suppliers } = useUserSuppliers();
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -119,7 +77,9 @@ const SUPPLIERS_PAGE = () => {
                     </div>
                     <div>
                       <CardTitle className="text-lg">{supplier.name}</CardTitle>
-                      <Muted className="text-sm">{supplier.category}</Muted>
+                      <Muted className="text-sm">
+                        {supplier.contactPerson || 'No contact person'}
+                      </Muted>
                     </div>
                   </div>
                   <DropdownMenu>
@@ -142,22 +102,22 @@ const SUPPLIERS_PAGE = () => {
                 <div className="flex items-center justify-between pt-1">
                   <Badge className={statusInfo.color}>{statusInfo.text}</Badge>
                   <Muted className="text-sm">
-                    Updated: {formatDate(supplier.lastUpdated)}
+                    Updated: {formatDate(supplier.updatedAt.toISOString())}
                   </Muted>
                 </div>
               </CardHeader>
 
               <CardContent className="flex-1 space-y-3">
                 <p className="line-clamp-3 text-muted-foreground text-sm">
-                  {supplier.description}
+                  {supplier.address || 'No address provided'}
                 </p>
                 <div className="flex flex-col items-start justify-between gap-1 font-medium text-sm">
                   <div className="flex items-center gap-1">
-                    <Phone className="h-4 w-4" /> {supplier.contact}
+                    <Phone className="h-4 w-4" /> {supplier.phone || 'No phone'}
                   </div>
                   <div className="flex items-center gap-1">
                     <Building className="h-4 w-4" />
-                    {supplier.type}
+                    {supplier.email || 'No email'}
                   </div>
                 </div>
               </CardContent>

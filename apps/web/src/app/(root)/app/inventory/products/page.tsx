@@ -1,3 +1,5 @@
+'use client';
+
 import {
   ChevronDown,
   DollarSign,
@@ -18,53 +20,15 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Separator } from '@/components/ui/separator';
+import { useUserProducts } from '@/hooks/products';
 
 const PRODUCTS_SERVICES_PAGE = () => {
-  const offerings = [
-    {
-      id: 'p1',
-      name: 'Premium Website Design',
-      type: 'Service',
-      price: 1200,
-      category: 'Design',
-      status: 'active',
-      lastUpdated: '2025-08-28',
-      description: 'Custom-designed websites tailored to your brand.',
-    },
-    {
-      id: 'p2',
-      name: 'SEO Optimization Package',
-      type: 'Service',
-      price: 500,
-      category: 'Marketing',
-      status: 'active',
-      lastUpdated: '2025-08-26',
-      description: 'Boost your website ranking with advanced SEO strategies.',
-    },
-    {
-      id: 'p3',
-      name: 'E-commerce Template',
-      type: 'Product',
-      price: 299,
-      category: 'Templates',
-      status: 'active',
-      lastUpdated: '2025-08-24',
-      description: 'Prebuilt e-commerce storefront ready for deployment.',
-    },
-    {
-      id: 'p4',
-      name: 'Branding Kit',
-      type: 'Product',
-      price: 150,
-      category: 'Branding',
-      status: 'inactive',
-      lastUpdated: '2025-08-22',
-      description: 'Logos, typography, and brand guidelines for consistency.',
-    },
-  ];
+  const { data: offerings } = useUserProducts();
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+  const formatDate = (dateString: string | Date) => {
+    const date =
+      typeof dateString === 'string' ? new Date(dateString) : dateString;
+    return date.toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
     });
@@ -143,7 +107,7 @@ const PRODUCTS_SERVICES_PAGE = () => {
                 <div className="flex items-center justify-between pt-1">
                   <Badge className={statusInfo.color}>{statusInfo.text}</Badge>
                   <Muted className="text-sm">
-                    Updated: {formatDate(item.lastUpdated)}
+                    Updated: {formatDate(item.updatedAt)}
                   </Muted>
                 </div>
               </CardHeader>
@@ -154,7 +118,10 @@ const PRODUCTS_SERVICES_PAGE = () => {
                 </p>
                 <div className="flex items-center justify-between font-medium text-sm">
                   <div className="flex items-center gap-1">
-                    <DollarSign className="h-4 w-4" />${item.price}
+                    <DollarSign className="h-4 w-4" />$
+                    {typeof item.price === 'string'
+                      ? Number.parseFloat(item.price)
+                      : item.price}
                   </div>
                   <div className="flex items-center gap-1">
                     <Tag className="h-4 w-4" />

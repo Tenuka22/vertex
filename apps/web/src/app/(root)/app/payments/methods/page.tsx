@@ -64,11 +64,7 @@ const EmptyStateCard = () => (
 );
 
 const PAYMENT_METHODS_PAGE = () => {
-  const {
-    data: paymentMethods = [],
-    isLoading,
-    error,
-  } = useUserPaymentMethods();
+  const { data: paymentMethods, isLoading, error } = useUserPaymentMethods();
 
   const getStatusBadge = (isActive: boolean) => ({
     color: isActive

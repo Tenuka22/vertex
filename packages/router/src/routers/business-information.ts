@@ -11,7 +11,7 @@ import { db } from '../db';
 import { protectedProcedure } from '../domain/orpc';
 import { getUserBusinessProfile } from './business';
 
-const getBusinessProfileId = async (context: Context) => {
+export const getBusinessProfileId = async (context: Context) => {
   const business = await call(
     getUserBusinessProfile,
     {},
@@ -22,6 +22,7 @@ const getBusinessProfileId = async (context: Context) => {
 
   return business.id;
 };
+
 export const createUpdateBusinessInformation = protectedProcedure
   .input(
     z.object({

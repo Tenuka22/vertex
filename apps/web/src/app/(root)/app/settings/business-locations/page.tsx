@@ -425,7 +425,7 @@ const LOCATIONS_PAGE = () => {
   } = useUserBusinessProfile();
 
   const {
-    data: businessLocations = [],
+    data: businessLocations,
     isLoading: isLoadingLocations,
     error: locationsError,
   } = useUserBusinessLocations(businessProfile?.id);

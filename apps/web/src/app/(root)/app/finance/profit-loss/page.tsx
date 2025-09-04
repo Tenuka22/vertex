@@ -19,29 +19,9 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Separator } from '@/components/ui/separator';
+import { useProfitLossData, useProfitLossSummary } from '@/hooks/profit-loss';
 
 const PROFIT_THRESHOLD = 0;
-
-const profitLossData = [
-  {
-    id: '1',
-    category: 'Product Sales',
-    revenue: 50_000,
-    expenses: 30_000,
-  },
-  {
-    id: '2',
-    category: 'Consulting',
-    revenue: 20_000,
-    expenses: 10_000,
-  },
-  {
-    id: '3',
-    category: 'Marketing Campaigns',
-    revenue: 10_000,
-    expenses: 15_000,
-  },
-];
 
 const formatCurrency = (amount: number) =>
   `$${amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
@@ -55,15 +35,10 @@ const getProfitLossStatus = (revenue: number, expenses: number) => {
 };
 
 const PROFIT_LOSS_PAGE = () => {
-  const totalRevenue = profitLossData.reduce(
-    (acc, item) => acc + item.revenue,
-    0
-  );
-  const totalExpenses = profitLossData.reduce(
-    (acc, item) => acc + item.expenses,
-    0
-  );
-  const netProfit = totalRevenue - totalExpenses;
+  const { data: profitLossData } = useProfitLossData();
+  const { data: summary } = useProfitLossSummary();
+
+  const { totalRevenue, totalExpenses, netProfit } = summary;
 
   return (
     <div className="space-y-6">

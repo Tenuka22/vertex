@@ -7,3 +7,10 @@ export const useUserPaymentMethods = () =>
     queryKey: ['user', 'paymentMethods'],
     initialData: [],
   });
+
+export const useUserTransactions = () =>
+  useQuery({
+    queryFn: async () => await orpc.transaction.get.call(),
+    queryKey: ['user', 'transactions'],
+    initialData: [],
+  });
