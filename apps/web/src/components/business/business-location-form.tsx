@@ -264,13 +264,10 @@ const ContactFields = ({ form }: { form: FormType }) => (
   </div>
 );
 
-//
-// Main Component
-//
 export const BusinessLocationForm = <TDefaultData extends { id: string }>({
   defaultData,
 }: {
-  defaultData?: TDefaultData;
+  defaultData: TDefaultData;
 }) => {
   const [currentStep, setCurrentStep] = useState(FIRST_STEP);
 

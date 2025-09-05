@@ -1,7 +1,11 @@
+'use client';
+
 import {
+  AlertCircle,
   Calendar,
   ChevronDown,
   Filter,
+  Loader2,
   Package,
   Plus,
   Receipt,
@@ -17,46 +21,28 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Separator } from '@/components/ui/separator';
+import { useUserPurchaseOrders } from '@/hooks/purchase-orders';
+
+type PurchaseOrder = {
+  id: string;
+  orderNumber: string;
+  totalAmount: string;
+  status: string;
+  orderDate: Date;
+  expectedDelivery: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+  supplier: {
+    id: string;
+    name: string;
+    contactPerson: string | null;
+    email: string | null;
+    phone: string | null;
+  };
+};
 
 const ORDERS_PAGE = () => {
-  const orders = [
-    {
-      id: 'o1',
-      supplier: 'Global Supplies Inc.',
-      items: ['Packaging Boxes', 'Labels'],
-      totalCost: 320,
-      status: 'pending',
-      expectedDelivery: '2025-09-05',
-      lastUpdated: '2025-08-29',
-    },
-    {
-      id: 'o2',
-      supplier: 'Fresh Produce Co.',
-      items: ['Organic Apples', 'Wheat Flour'],
-      totalCost: 480,
-      status: 'shipped',
-      expectedDelivery: '2025-09-01',
-      lastUpdated: '2025-08-28',
-    },
-    {
-      id: 'o3',
-      supplier: 'TechParts Warehouse',
-      items: ['Microchips', 'Power Adapters'],
-      totalCost: 1200,
-      status: 'delivered',
-      expectedDelivery: '2025-08-25',
-      lastUpdated: '2025-08-26',
-    },
-    {
-      id: 'o4',
-      supplier: 'Local Artisan Collective',
-      items: ['Handmade Mugs', 'Custom Packaging'],
-      totalCost: 250,
-      status: 'canceled',
-      expectedDelivery: '2025-08-23',
-      lastUpdated: '2025-08-22',
-    },
-  ];
+  const { data: orders, isFetching, error } = useUserPurchaseOrders();
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -80,9 +66,126 @@ const ORDERS_PAGE = () => {
     }
   };
 
+  if (isFetching) {
+    return (
+      <main className="relative space-y-8 p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <H2 className="font-bold text-3xl">Supplier Orders</H2>
+            <Muted>
+              Track orders placed with suppliers and follow up on delivery
+              status.
+            </Muted>
+          </div>
+          <div className="flex gap-2">
+            <Button className="gap-2" disabled variant="outline">
+              <Filter className="h-4 w-4" /> Filter
+            </Button>
+            <Button className="gap-2" disabled>
+              <Plus className="h-4 w-4" /> New Order
+            </Button>
+          </div>
+        </div>
+        <Separator />
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 6 }).map(() => (
+            <Card className="shadow-md" key={crypto.randomUUID()}>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  Loading Order...
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="h-4 w-3/4 animate-pulse rounded bg-muted" />
+                <div className="h-4 w-1/2 animate-pulse rounded bg-muted" />
+                <div className="h-4 w-2/3 animate-pulse rounded bg-muted" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </main>
+    );
+  }
+
+  if (error) {
+    return (
+      <main className="relative space-y-8 p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <H2 className="font-bold text-3xl">Supplier Orders</H2>
+            <Muted>
+              Track orders placed with suppliers and follow up on delivery
+              status.
+            </Muted>
+          </div>
+        </div>
+        <Separator />
+        <Card className="border-destructive">
+          <CardContent className="p-6">
+            <div className="flex flex-col items-center justify-center space-y-4 text-center">
+              <AlertCircle className="h-12 w-12 text-destructive" />
+              <div className="w-fit">
+                <H2 className="font-semibold text-xl">Error Loading Data</H2>
+                <P>
+                  There was an error loading your purchase orders. Please try
+                  refreshing the page.
+                </P>
+              </div>
+              <Button
+                onClick={() => window.location.reload()}
+                variant="outline"
+              >
+                Refresh Page
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </main>
+    );
+  }
+
+  if (!orders || orders.length === 0) {
+    return (
+      <main className="relative space-y-8 p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <H2 className="font-bold text-3xl">Supplier Orders</H2>
+            <Muted>
+              Track orders placed with suppliers and follow up on delivery
+              status.
+            </Muted>
+          </div>
+          <div className="flex gap-2">
+            <Button className="gap-2" variant="outline">
+              <Filter className="h-4 w-4" /> Filter
+            </Button>
+            <Button className="gap-2">
+              <Plus className="h-4 w-4" /> New Order
+            </Button>
+          </div>
+        </div>
+        <Separator />
+        <Card className="border-dashed">
+          <CardContent className="p-6">
+            <div className="flex flex-col items-center justify-center space-y-4 text-center">
+              <AlertCircle className="h-12 w-12 text-muted-foreground" />
+              <div className="w-fit">
+                <H2 className="font-semibold text-xl">No Purchase Orders</H2>
+                <P>Start by creating your first purchase order.</P>
+              </div>
+              <Button className="gap-2">
+                <Plus className="h-4 w-4" /> Create First Order
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </main>
+    );
+  }
+
   return (
     <main className="relative space-y-8 p-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <H2 className="font-bold text-3xl">Supplier Orders</H2>
@@ -102,9 +205,8 @@ const ORDERS_PAGE = () => {
 
       <Separator />
 
-      {/* Orders Grid */}
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {orders.map((order) => {
+        {(orders || []).map((order: PurchaseOrder) => {
           const statusInfo = getStatusBadge(order.status);
 
           return (
@@ -123,7 +225,7 @@ const ORDERS_PAGE = () => {
                         Order #{order.id.toUpperCase()}
                       </CardTitle>
                       <Muted className="text-sm">
-                        Supplier: {order.supplier}
+                        Supplier: {order.supplier?.name || 'Unknown Supplier'}
                       </Muted>
                     </div>
                   </div>
@@ -147,22 +249,24 @@ const ORDERS_PAGE = () => {
                 <div className="flex items-center justify-between pt-1">
                   <Badge className={statusInfo.color}>{statusInfo.text}</Badge>
                   <Muted className="text-sm">
-                    Updated: {formatDate(order.lastUpdated)}
+                    Updated: {formatDate(order.updatedAt.toISOString())}
                   </Muted>
                 </div>
               </CardHeader>
 
               <CardContent className="flex-1 space-y-3">
                 <p className="line-clamp-3 text-muted-foreground text-sm">
-                  {order.items.join(', ')}
+                  Order #{order.orderNumber || order.id}
                 </p>
                 <div className="flex items-center justify-between font-medium text-sm">
                   <div className="flex items-center gap-1">
-                    <Package className="h-4 w-4" /> ${order.totalCost}
+                    <Package className="h-4 w-4" /> ${order.totalAmount}
                   </div>
                   <div className="flex items-center gap-1">
                     <Calendar className="h-4 w-4" />
-                    {formatDate(order.expectedDelivery)}
+                    {order.expectedDelivery
+                      ? formatDate(order.expectedDelivery.toISOString())
+                      : 'TBD'}
                   </div>
                 </div>
               </CardContent>
@@ -171,7 +275,6 @@ const ORDERS_PAGE = () => {
         })}
       </div>
 
-      {/* Create CTA */}
       <Card className="border-dashed">
         <CardContent className="p-6">
           <div className="flex flex-col items-center justify-center space-y-4 text-center">

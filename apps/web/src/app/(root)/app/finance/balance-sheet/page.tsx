@@ -1,8 +1,10 @@
-// app/finance/balance-sheet/page.tsx
+'use client';
 
 import {
+  AlertCircle,
   ChevronDown,
   Filter,
+  Loader2,
   Plus,
   TrendingDown,
   TrendingUp,
@@ -19,47 +21,74 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Separator } from '@/components/ui/separator';
+import { useUserBalanceSheetItems } from '@/hooks/finance';
 
-const balanceSheetItems = [
-  {
-    id: 'asset1',
-    type: 'asset',
-    title: 'Cash & Bank',
-    amount: 12_000,
-    description: 'Available liquid funds in all accounts',
-  },
-  {
-    id: 'asset2',
-    type: 'asset',
-    title: 'Inventory',
-    amount: 8000,
-    description: 'Total value of unsold products',
-  },
-  {
-    id: 'liability1',
-    type: 'liability',
-    title: 'Supplier Credit',
-    amount: 5000,
-    description: 'Outstanding payments to suppliers',
-  },
-  {
-    id: 'liability2',
-    type: 'liability',
-    title: 'Bank Loan',
-    amount: 7000,
-    description: 'Pending loan repayment',
-  },
-  {
-    id: 'equity1',
-    type: 'equity',
-    title: 'Owner’s Equity',
-    amount: 8000,
-    description: 'Capital invested by owners',
-  },
-];
+const LoadingSkeleton = ({ className = '' }: { className?: string }) => (
+  <div className={`animate-pulse rounded bg-muted ${className}`} />
+);
+
+const LoadingCard = () => (
+  <Card className="flex cursor-pointer flex-col border shadow-md">
+    <CardHeader className="pb-3">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <LoadingSkeleton className="h-10 w-10 rounded-lg" />
+          <div className="space-y-2">
+            <LoadingSkeleton className="h-5 w-32" />
+            <LoadingSkeleton className="h-4 w-48" />
+          </div>
+        </div>
+        <Loader2 className="h-4 w-4 animate-spin" />
+      </div>
+      <div className="flex items-center justify-between pt-1">
+        <LoadingSkeleton className="h-6 w-16 rounded-full" />
+      </div>
+    </CardHeader>
+    <CardContent className="flex-1">
+      <LoadingSkeleton className="h-6 w-24" />
+    </CardContent>
+  </Card>
+);
+
+const EmptyState = () => (
+  <Card className="border-dashed">
+    <CardContent className="p-6">
+      <div className="flex flex-col items-center justify-center space-y-4 text-center">
+        <AlertCircle className="h-12 w-12 text-muted-foreground" />
+        <div className="w-fit">
+          <H2 className="font-semibold text-xl">No Balance Sheet Items</H2>
+          <P>Start by adding your first asset, liability, or equity item.</P>
+        </div>
+        <Button className="gap-2">
+          <Plus className="h-4 w-4" /> Add First Item
+        </Button>
+      </div>
+    </CardContent>
+  </Card>
+);
+
+const ErrorState = () => (
+  <Card className="border-destructive">
+    <CardContent className="p-6">
+      <div className="flex flex-col items-center justify-center space-y-4 text-center">
+        <AlertCircle className="h-12 w-12 text-destructive" />
+        <div className="w-fit">
+          <H2 className="font-semibold text-xl">Error Loading Data</H2>
+          <P>
+            There was an error loading your balance sheet items. Please try
+            refreshing the page.
+          </P>
+        </div>
+        <Button onClick={() => window.location.reload()} variant="outline">
+          Refresh Page
+        </Button>
+      </div>
+    </CardContent>
+  </Card>
+);
 
 const getTypeBadge = (type: string) => {
-  switch (type) {
+  switch (type.toLowerCase()) {
     case 'asset':
       return { color: 'bg-green-100 text-green-800', text: 'Asset' };
     case 'liability':
@@ -72,7 +101,7 @@ const getTypeBadge = (type: string) => {
 };
 
 const getTypeIcon = (type: string) => {
-  switch (type) {
+  switch (type.toLowerCase()) {
     case 'asset':
       return TrendingUp;
     case 'liability':
@@ -85,7 +114,7 @@ const getTypeIcon = (type: string) => {
 };
 
 const getTypeColor = (type: string) => {
-  switch (type) {
+  switch (type.toLowerCase()) {
     case 'asset':
       return 'bg-green-500';
     case 'liability':
@@ -98,9 +127,87 @@ const getTypeColor = (type: string) => {
 };
 
 const BALANCE_SHEET_PAGE = () => {
+  const {
+    data: balanceSheetItems,
+    isFetching,
+    error,
+  } = useUserBalanceSheetItems();
+
+  const displayItems = balanceSheetItems || [];
+
+  if (isFetching) {
+    return (
+      <main className="relative space-y-8 p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <H2 className="font-bold text-3xl">Balance Sheet</H2>
+            <Muted>Overview of your assets, liabilities, and equity.</Muted>
+          </div>
+          <div className="flex gap-2">
+            <Button className="gap-2" disabled variant="outline">
+              <Filter className="h-4 w-4" /> Filter
+            </Button>
+            <Button className="gap-2" disabled>
+              <Plus className="h-4 w-4" /> Add Item
+            </Button>
+          </div>
+        </div>
+
+        <Separator />
+
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 6 }).map(() => (
+            <LoadingCard key={crypto.randomUUID()} />
+          ))}
+        </div>
+      </main>
+    );
+  }
+
+  if (error) {
+    return (
+      <main className="relative space-y-8 p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <H2 className="font-bold text-3xl">Balance Sheet</H2>
+            <Muted>Overview of your assets, liabilities, and equity.</Muted>
+          </div>
+        </div>
+
+        <Separator />
+
+        <ErrorState />
+      </main>
+    );
+  }
+
+  if (!displayItems || displayItems.length === 0) {
+    return (
+      <main className="relative space-y-8 p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <H2 className="font-bold text-3xl">Balance Sheet</H2>
+            <Muted>Overview of your assets, liabilities, and equity.</Muted>
+          </div>
+          <div className="flex gap-2">
+            <Button className="gap-2" variant="outline">
+              <Filter className="h-4 w-4" /> Filter
+            </Button>
+            <Button className="gap-2">
+              <Plus className="h-4 w-4" /> Add Item
+            </Button>
+          </div>
+        </div>
+
+        <Separator />
+
+        <EmptyState />
+      </main>
+    );
+  }
+
   return (
     <main className="relative space-y-8 p-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <H2 className="font-bold text-3xl">Balance Sheet</H2>
@@ -118,12 +225,15 @@ const BALANCE_SHEET_PAGE = () => {
 
       <Separator />
 
-      {/* Balance Sheet Cards */}
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {balanceSheetItems.map((item) => {
+        {displayItems.map((item) => {
           const badge = getTypeBadge(item.type);
           const Icon = getTypeIcon(item.type);
           const bgColor = getTypeColor(item.type);
+          const amount =
+            typeof item.amount === 'string'
+              ? Number.parseFloat(item.amount)
+              : item.amount;
 
           return (
             <Card
@@ -163,7 +273,7 @@ const BALANCE_SHEET_PAGE = () => {
 
               <CardContent className="flex-1">
                 <div className="flex items-center justify-between font-semibold text-lg">
-                  ${item.amount.toLocaleString()}
+                  ${amount.toLocaleString()}
                 </div>
               </CardContent>
             </Card>
@@ -171,7 +281,6 @@ const BALANCE_SHEET_PAGE = () => {
         })}
       </div>
 
-      {/* Create CTA */}
       <Card className="border-dashed">
         <CardContent className="p-6">
           <div className="flex flex-col items-center justify-center space-y-4 text-center">

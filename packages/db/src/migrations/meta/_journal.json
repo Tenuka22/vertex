@@ -5,15 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1756051939556,
-      "tag": "0000_large_songbird",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1756718540595,
-      "tag": "0001_clean_leper_queen",
+      "when": 1756979438554,
+      "tag": "0000_dry_speed",
       "breakpoints": true
     }
   ]

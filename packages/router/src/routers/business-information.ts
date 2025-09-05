@@ -1,38 +1,27 @@
 import { ORPCError } from '@orpc/client';
+import { call } from '@orpc/server';
 import {
   BusinessInformationInsert,
   businessInformation,
-  businessProfile,
 } from '@repo/db/schema/primary';
 import { eq } from 'drizzle-orm';
 import z from 'zod';
+import type { Context } from '../../../../apps/server/src/lib/context';
 import { db } from '../db';
 import { protectedProcedure } from '../domain/orpc';
+import { getUserBusinessProfile } from './business';
 
-async function getBusinessProfileId(userId: string) {
-  const profile = await db
-    .select()
-    .from(businessProfile)
-    .where(eq(businessProfile.userId, userId))
-    .then((v) => v[0]);
-
-  if (!profile) {
-    const createProfile = await db
-      .insert(businessProfile)
-      .values({ userId, companyName: '', email: '', linkedin: '', twitter: '' })
-      .returning()
-      .then((v) => v[0]);
-
-    if (!createProfile) {
-      throw new Error(
-        'User do not have a business profile and cannnot be created'
-      );
+export const getBusinessProfileId = async (context: Context) => {
+  const business = await call(
+    getUserBusinessProfile,
+    {},
+    {
+      context,
     }
-    return createProfile.id;
-  }
+  );
 
-  return profile.id;
-}
+  return business.id;
+};
 
 export const createUpdateBusinessInformation = protectedProcedure
   .input(
@@ -41,10 +30,9 @@ export const createUpdateBusinessInformation = protectedProcedure
     })
   )
   .handler(async ({ input, context }) => {
-    const { user } = context.session;
     const providedInfo = input.infoData;
 
-    const businessProfileId = await getBusinessProfileId(user.id);
+    const businessProfileId = await getBusinessProfileId(context);
 
     const existingInfo = await db
       .select()
@@ -87,9 +75,7 @@ export const createUpdateBusinessInformation = protectedProcedure
 
 export const getUserBusinessInformation = protectedProcedure.handler(
   async ({ context }) => {
-    const { user } = context.session;
-
-    const businessProfileId = await getBusinessProfileId(user.id);
+    const businessProfileId = await getBusinessProfileId(context);
     const infoData = await db
       .select()
       .from(businessInformation)
@@ -118,8 +104,7 @@ export const getUserBusinessInformation = protectedProcedure.handler(
 
 export const deleteBusinessInformation = protectedProcedure.handler(
   async ({ context }) => {
-    const { user } = context.session;
-    const businessProfileId = await getBusinessProfileId(user.id);
+    const businessProfileId = await getBusinessProfileId(context);
 
     const existingInfo = await db
       .select()

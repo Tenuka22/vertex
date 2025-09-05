@@ -7,6 +7,7 @@ import { and, eq } from 'drizzle-orm';
 import z from 'zod';
 import { db } from '../db';
 import { protectedProcedure } from '../domain/orpc';
+import { getBusinessProfileId } from './business-information';
 
 export const createUpdateBusinessLocation = protectedProcedure
   .input(
@@ -33,20 +34,20 @@ export const createUpdateBusinessLocation = protectedProcedure
     return insertedUpdated;
   });
 
-export const getBusinessLocations = protectedProcedure
-  .input(
-    z.object({
-      businessProfileId: z.string(),
-    })
-  )
-  .handler(async ({ input }) => {
+export const getBusinessLocations = protectedProcedure.handler(
+  async ({ context }) => {
+    const businessProfileId = await getBusinessProfileId(context);
+    if (!businessProfileId) {
+      return [];
+    }
     const locations = await db
       .select()
       .from(businessLocations)
-      .where(eq(businessLocations.businessProfileId, input.businessProfileId));
+      .where(eq(businessLocations.businessProfileId, businessProfileId));
 
     return locations;
-  });
+  }
+);
 
 export const getBusinessLocationById = protectedProcedure
   .input(z.object({ id: z.string() }))
