@@ -1,7 +1,11 @@
+'use client';
+
 import {
+  AlertCircle,
   Building,
   ChevronDown,
   Filter,
+  Loader2,
   Phone,
   Plus,
   Truck,
@@ -17,71 +21,160 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Separator } from '@/components/ui/separator';
+import { useUserSuppliers } from '@/hooks/inventory';
+
+const LoadingSkeleton = ({ className = '' }: { className?: string }) => (
+  <div className={`animate-pulse rounded bg-muted ${className}`} />
+);
+
+const LoadingCard = () => (
+  <Card className="shadow-md">
+    <CardHeader>
+      <CardTitle className="flex items-center gap-2">
+        <Loader2 className="h-5 w-5 animate-spin" />
+        Loading Supplier...
+      </CardTitle>
+    </CardHeader>
+    <CardContent className="space-y-4">
+      <LoadingSkeleton className="h-4 w-3/4" />
+      <LoadingSkeleton className="h-4 w-1/2" />
+      <LoadingSkeleton className="h-4 w-2/3" />
+    </CardContent>
+  </Card>
+);
+
+const EmptyStateCard = () => (
+  <Card className="shadow-md">
+    <CardHeader>
+      <CardTitle className="flex items-center gap-2">
+        <AlertCircle className="h-5 w-5" /> No Suppliers
+      </CardTitle>
+    </CardHeader>
+    <CardContent className="py-8 text-center">
+      <AlertCircle className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
+      <p className="text-muted-foreground">
+        You haven't added any suppliers yet. Click "Add Supplier" to get
+        started.
+      </p>
+    </CardContent>
+  </Card>
+);
+
+const ErrorState = () => (
+  <Card className="border-destructive">
+    <CardContent className="p-6">
+      <div className="flex flex-col items-center justify-center space-y-4 text-center">
+        <AlertCircle className="h-12 w-12 text-destructive" />
+        <div className="w-fit">
+          <H2 className="font-semibold text-xl">Error Loading Data</H2>
+          <P>
+            There was an error loading your suppliers. Please try refreshing the
+            page.
+          </P>
+        </div>
+        <Button onClick={() => window.location.reload()} variant="outline">
+          Refresh Page
+        </Button>
+      </div>
+    </CardContent>
+  </Card>
+);
+
+const formatDate = (dateString: string) => {
+  return new Date(dateString).toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+  });
+};
+
+const getStatusBadge = (status: string) => {
+  return status === 'active'
+    ? { color: 'bg-green-100 text-green-800', text: 'Active' }
+    : { color: 'bg-gray-100 text-gray-800', text: 'Inactive' };
+};
 
 const SUPPLIERS_PAGE = () => {
-  const suppliers = [
-    {
-      id: 's1',
-      name: 'Global Supplies Inc.',
-      type: 'Material Supplier',
-      category: 'Packaging',
-      contact: '+1-202-555-0183',
-      status: 'active',
-      lastUpdated: '2025-08-29',
-      description:
-        'Provides packaging materials including boxes, labels, and shipping supplies.',
-    },
-    {
-      id: 's2',
-      name: 'Fresh Produce Co.',
-      type: 'Raw Materials',
-      category: 'Food Ingredients',
-      contact: '+1-202-555-0199',
-      status: 'active',
-      lastUpdated: '2025-08-27',
-      description:
-        'Organic produce supplier for all raw ingredients needed in product creation.',
-    },
-    {
-      id: 's3',
-      name: 'TechParts Warehouse',
-      type: 'Component Supplier',
-      category: 'Electronics',
-      contact: '+1-202-555-0101',
-      status: 'inactive',
-      lastUpdated: '2025-08-20',
-      description:
-        'Supplier of electronic components and spare parts for devices and kits.',
-    },
-    {
-      id: 's4',
-      name: 'Local Artisan Collective',
-      type: 'Specialty Supplier',
-      category: 'Handmade Goods',
-      contact: '+1-202-555-0112',
-      status: 'active',
-      lastUpdated: '2025-08-21',
-      description:
-        'Handcrafted items and specialty materials from local artisans.',
-    },
-  ];
+  const { data: suppliers, isFetching, error } = useUserSuppliers();
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-    });
-  };
+  if (isFetching) {
+    return (
+      <main className="relative space-y-8 p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <H2 className="font-bold text-3xl">Suppliers</H2>
+            <Muted>
+              Track suppliers, their offerings, and sourcing information.
+            </Muted>
+          </div>
+          <div className="flex gap-2">
+            <Button className="gap-2" disabled variant="outline">
+              <Filter className="h-4 w-4" /> Filter
+            </Button>
+            <Button className="gap-2" disabled>
+              <Plus className="h-4 w-4" /> Add Supplier
+            </Button>
+          </div>
+        </div>
 
-  const getStatusBadge = (status: string) => {
-    return status === 'active'
-      ? { color: 'bg-green-100 text-green-800', text: 'Active' }
-      : { color: 'bg-gray-100 text-gray-800', text: 'Inactive' };
-  };
+        <Separator />
+
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 3 }).map(() => (
+            <LoadingCard key={crypto.randomUUID()} />
+          ))}
+        </div>
+      </main>
+    );
+  }
+
+  if (error) {
+    return (
+      <main className="relative space-y-8 p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <H2 className="font-bold text-3xl">Suppliers</H2>
+            <Muted>
+              Track suppliers, their offerings, and sourcing information.
+            </Muted>
+          </div>
+        </div>
+
+        <Separator />
+
+        <ErrorState />
+      </main>
+    );
+  }
+
+  if (!suppliers || suppliers.length === 0) {
+    return (
+      <main className="relative space-y-8 p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <H2 className="font-bold text-3xl">Suppliers</H2>
+            <Muted>
+              Track suppliers, their offerings, and sourcing information.
+            </Muted>
+          </div>
+          <div className="flex gap-2">
+            <Button className="gap-2" variant="outline">
+              <Filter className="h-4 w-4" /> Filter
+            </Button>
+            <Button className="gap-2">
+              <Plus className="h-4 w-4" /> Add Supplier
+            </Button>
+          </div>
+        </div>
+
+        <Separator />
+
+        <EmptyStateCard />
+      </main>
+    );
+  }
 
   return (
     <main className="relative space-y-8 p-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <H2 className="font-bold text-3xl">Suppliers</H2>
@@ -101,9 +194,8 @@ const SUPPLIERS_PAGE = () => {
 
       <Separator />
 
-      {/* Suppliers Grid */}
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {suppliers.map((supplier) => {
+        {(suppliers || []).map((supplier) => {
           const statusInfo = getStatusBadge(supplier.status);
 
           return (
@@ -119,7 +211,9 @@ const SUPPLIERS_PAGE = () => {
                     </div>
                     <div>
                       <CardTitle className="text-lg">{supplier.name}</CardTitle>
-                      <Muted className="text-sm">{supplier.category}</Muted>
+                      <Muted className="text-sm">
+                        {supplier.contactPerson || 'No contact person'}
+                      </Muted>
                     </div>
                   </div>
                   <DropdownMenu>
@@ -142,22 +236,22 @@ const SUPPLIERS_PAGE = () => {
                 <div className="flex items-center justify-between pt-1">
                   <Badge className={statusInfo.color}>{statusInfo.text}</Badge>
                   <Muted className="text-sm">
-                    Updated: {formatDate(supplier.lastUpdated)}
+                    Updated: {formatDate(supplier.updatedAt.toISOString())}
                   </Muted>
                 </div>
               </CardHeader>
 
               <CardContent className="flex-1 space-y-3">
                 <p className="line-clamp-3 text-muted-foreground text-sm">
-                  {supplier.description}
+                  {supplier.address || 'No address provided'}
                 </p>
                 <div className="flex flex-col items-start justify-between gap-1 font-medium text-sm">
                   <div className="flex items-center gap-1">
-                    <Phone className="h-4 w-4" /> {supplier.contact}
+                    <Phone className="h-4 w-4" /> {supplier.phone || 'No phone'}
                   </div>
                   <div className="flex items-center gap-1">
                     <Building className="h-4 w-4" />
-                    {supplier.type}
+                    {supplier.email || 'No email'}
                   </div>
                 </div>
               </CardContent>
@@ -166,7 +260,6 @@ const SUPPLIERS_PAGE = () => {
         })}
       </div>
 
-      {/* Create CTA */}
       <Card className="border-dashed">
         <CardContent className="p-6">
           <div className="flex flex-col items-center justify-center space-y-4 text-center">

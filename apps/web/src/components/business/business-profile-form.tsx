@@ -56,7 +56,6 @@ type FormType = ReactFormExtendedApi<
 >;
 const FirstStepFields = ({ form }: { form: FormType }) => (
   <div className="grid gap-4 sm:grid-cols-2">
-    {/** Company Info */}
     <form.Field name="companyName">
       {(field) => (
         <div className="space-y-2">
@@ -220,7 +219,6 @@ const FirstStepFields = ({ form }: { form: FormType }) => (
       )}
     </form.Field>
 
-    {/** Address Fields */}
     <form.Field name="addressLine1">
       {(field) => (
         <div className="space-y-2 sm:col-span-2">
@@ -315,7 +313,6 @@ const FirstStepFields = ({ form }: { form: FormType }) => (
 
 const SecondStepFields = ({ form }: { form: FormType }) => (
   <div className="grid gap-4 sm:grid-cols-2">
-    {/** Branding & Contact */}
     <form.Field name="logoUrl">
       {(field) => (
         <div className="space-y-2">

@@ -6,12 +6,12 @@ import {
   pgTable,
   text,
   timestamp,
-  uuid,
   varchar,
 } from 'drizzle-orm/pg-core';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { user } from './auth';
 import {
+  balanceSheetItemTypeEnum,
   budgetCategoryEnum,
   cashFlowDirectionEnum,
   expenseCategoryEnum,
@@ -25,9 +25,12 @@ export * from './auth';
 export * from './enums';
 
 export const businessProfile = pgTable('business_profile', {
-  id: uuid('id').primaryKey().defaultRandom(),
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
   userId: text('userId')
     .notNull()
+    .unique()
     .references(() => user.id),
 
   companyName: varchar('company_name', { length: 255 }).notNull(),
@@ -67,8 +70,10 @@ export const businessProfile = pgTable('business_profile', {
 });
 
 export const businessInformation = pgTable('business_information', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  businessProfileId: uuid('business_profile_id')
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  businessProfileId: text('business_profile_id')
     .references(() => businessProfile.id, { onDelete: 'cascade' })
     .notNull(),
 
@@ -100,8 +105,10 @@ export const businessInformation = pgTable('business_information', {
 });
 
 export const businessContacts = pgTable('business_contacts', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  businessProfileId: uuid('business_profile_id')
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  businessProfileId: text('business_profile_id')
     .references(() => businessProfile.id, { onDelete: 'cascade' })
     .notNull(),
 
@@ -123,8 +130,10 @@ export const businessContacts = pgTable('business_contacts', {
 });
 
 export const businessLocations = pgTable('business_locations', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  businessProfileId: uuid('business_profile_id')
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  businessProfileId: text('business_profile_id')
     .references(() => businessProfile.id, { onDelete: 'cascade' })
     .notNull(),
 
@@ -152,8 +161,10 @@ export const businessLocations = pgTable('business_locations', {
 });
 
 export const expenseCategories = pgTable('expense_categories', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  businessProfileId: uuid('business_profile_id')
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  businessProfileId: text('business_profile_id')
     .references(() => businessProfile.id, { onDelete: 'cascade' })
     .notNull(),
   name: expenseCategoryEnum('name').notNull(),
@@ -164,8 +175,10 @@ export const expenseCategories = pgTable('expense_categories', {
 });
 
 export const expenses = pgTable('expenses', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  expenseCategoryId: uuid('expense_category_id')
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  expenseCategoryId: text('expense_category_id')
     .references(() => expenseCategories.id, { onDelete: 'cascade' })
     .notNull(),
   name: varchar('name', { length: 255 }).notNull(),
@@ -176,8 +189,10 @@ export const expenses = pgTable('expenses', {
 });
 
 export const paymentMethods = pgTable('payment_methods', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  businessProfileId: uuid('business_profile_id')
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  businessProfileId: text('business_profile_id')
     .references(() => businessProfile.id, { onDelete: 'cascade' })
     .notNull(),
 
@@ -190,14 +205,16 @@ export const paymentMethods = pgTable('payment_methods', {
 });
 
 export const transactions = pgTable('transactions', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  businessProfileId: uuid('business_profile_id')
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  businessProfileId: text('business_profile_id')
     .references(() => businessProfile.id, { onDelete: 'cascade' })
     .notNull(),
-  paymentMethodId: uuid('payment_method_id').references(
+  paymentMethodId: text('payment_method_id').references(
     () => paymentMethods.id
   ),
-  expenseCategoryId: uuid('expense_category_id').references(
+  expenseCategoryId: text('expense_category_id').references(
     () => expenseCategories.id
   ),
   type: transactionTypeEnum('type').notNull(),
@@ -211,12 +228,14 @@ export const transactions = pgTable('transactions', {
 });
 
 export const cashFlows = pgTable('cash_flows', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  businessProfileId: uuid('business_profile_id')
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  businessProfileId: text('business_profile_id')
     .references(() => businessProfile.id, { onDelete: 'cascade' })
     .notNull(),
 
-  transactionId: uuid('transaction_id')
+  transactionId: text('transaction_id')
     .references(() => transactions.id, { onDelete: 'cascade' })
     .notNull(),
 
@@ -229,8 +248,10 @@ export const cashFlows = pgTable('cash_flows', {
 });
 
 export const budgets = pgTable('budgets', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  businessProfileId: uuid('business_profile_id')
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  businessProfileId: text('business_profile_id')
     .references(() => businessProfile.id, { onDelete: 'cascade' })
     .notNull(),
 
@@ -247,6 +268,181 @@ export const budgets = pgTable('budgets', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
+
+export const goals = pgTable('goals', {
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  businessProfileId: text('business_profile_id')
+    .references(() => businessProfile.id, { onDelete: 'cascade' })
+    .notNull(),
+
+  title: varchar('title', { length: 255 }).notNull(),
+  targetAmount: decimal('target_amount', { precision: 12, scale: 2 }).notNull(),
+  currentAmount: decimal('current_amount', { precision: 12, scale: 2 })
+    .default('0')
+    .notNull(),
+  deadline: timestamp('deadline').notNull(),
+  status: varchar('status', { length: 20 }).default('active').notNull(),
+  category: varchar('category', { length: 100 }).notNull(),
+
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+export const invoices = pgTable('invoices', {
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  businessProfileId: text('business_profile_id')
+    .references(() => businessProfile.id, { onDelete: 'cascade' })
+    .notNull(),
+
+  invoiceNumber: varchar('invoice_number', { length: 100 }).notNull(),
+  customer: varchar('customer', { length: 255 }).notNull(),
+  amount: decimal('amount', { precision: 12, scale: 2 }).notNull(),
+  status: varchar('status', { length: 20 }).default('pending').notNull(),
+  issueDate: timestamp('issue_date').defaultNow().notNull(),
+  dueDate: timestamp('due_date').notNull(),
+
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+export const products = pgTable('products', {
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  businessProfileId: text('business_profile_id')
+    .references(() => businessProfile.id, { onDelete: 'cascade' })
+    .notNull(),
+
+  name: varchar('name', { length: 255 }).notNull(),
+  price: decimal('price', { precision: 12, scale: 2 }).notNull(),
+  category: varchar('category', { length: 100 }).notNull(),
+  type: varchar('type', { length: 50 }).default('Product').notNull(),
+  status: varchar('status', { length: 20 }).default('active').notNull(),
+  description: text('description'),
+
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+export const suppliers = pgTable('suppliers', {
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  businessProfileId: text('business_profile_id')
+    .references(() => businessProfile.id, { onDelete: 'cascade' })
+    .notNull(),
+
+  name: varchar('name', { length: 255 }).notNull(),
+  contactPerson: varchar('contact_person', { length: 255 }),
+  email: varchar('email', { length: 255 }),
+  phone: varchar('phone', { length: 50 }),
+  address: text('address'),
+  status: varchar('status', { length: 20 }).default('active').notNull(),
+
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+export const inventory = pgTable('inventory', {
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  businessProfileId: text('business_profile_id')
+    .references(() => businessProfile.id, { onDelete: 'cascade' })
+    .notNull(),
+  productId: text('product_id')
+    .references(() => products.id, { onDelete: 'cascade' })
+    .notNull(),
+
+  quantity: integer('quantity').default(0).notNull(),
+  minStockLevel: integer('min_stock_level').default(0).notNull(),
+  maxStockLevel: integer('max_stock_level').default(0).notNull(),
+  unitCost: decimal('unit_cost', { precision: 12, scale: 2 }),
+  location: varchar('location', { length: 255 }),
+
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+export const purchaseOrders = pgTable('purchase_orders', {
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  businessProfileId: text('business_profile_id')
+    .references(() => businessProfile.id, { onDelete: 'cascade' })
+    .notNull(),
+  supplierId: text('supplier_id')
+    .references(() => suppliers.id, { onDelete: 'cascade' })
+    .notNull(),
+
+  orderNumber: varchar('order_number', { length: 100 }).notNull(),
+  totalAmount: decimal('total_amount', { precision: 12, scale: 2 }).notNull(),
+  status: varchar('status', { length: 20 }).default('pending').notNull(),
+  orderDate: timestamp('order_date').defaultNow().notNull(),
+  expectedDelivery: timestamp('expected_delivery'),
+
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+export const balanceSheetItems = pgTable('balance_sheet_items', {
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  businessProfileId: text('business_profile_id')
+    .references(() => businessProfile.id, { onDelete: 'cascade' })
+    .notNull(),
+
+  title: varchar('title', { length: 255 }).notNull(),
+  description: text('description'),
+  amount: decimal('amount', { precision: 12, scale: 2 }).notNull(),
+  type: balanceSheetItemTypeEnum('type').notNull(),
+
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+export type Goal = typeof goals.$inferSelect;
+export type NewGoal = typeof goals.$inferInsert;
+export const GoalSelect = createSelectSchema(goals);
+export const GoalInsert = createInsertSchema(goals);
+
+export type BalanceSheetItem = typeof balanceSheetItems.$inferSelect;
+export type NewBalanceSheetItem = typeof balanceSheetItems.$inferInsert;
+export const BalanceSheetItemSelect = createSelectSchema(balanceSheetItems);
+export const BalanceSheetItemInsert = createInsertSchema(balanceSheetItems);
+
+export type Invoice = typeof invoices.$inferSelect;
+export type NewInvoice = typeof invoices.$inferInsert;
+export const InvoiceSelect = createSelectSchema(invoices);
+export const InvoiceInsert = createInsertSchema(invoices);
+
+export type Product = typeof products.$inferSelect;
+export type NewProduct = typeof products.$inferInsert;
+export const ProductSelect = createSelectSchema(products);
+export const ProductInsert = createInsertSchema(products);
+
+export type Supplier = typeof suppliers.$inferSelect;
+export type NewSupplier = typeof suppliers.$inferInsert;
+export const SupplierSelect = createSelectSchema(suppliers);
+export const SupplierInsert = createInsertSchema(suppliers);
+
+export type Inventory = typeof inventory.$inferSelect;
+export type NewInventory = typeof inventory.$inferInsert;
+export const InventorySelect = createSelectSchema(inventory);
+export const InventoryInsert = createInsertSchema(inventory);
+
+export type PurchaseOrder = typeof purchaseOrders.$inferSelect;
+export type NewPurchaseOrder = typeof purchaseOrders.$inferInsert;
+export const PurchaseOrderSelect = createSelectSchema(purchaseOrders);
+export const PurchaseOrderInsert = createInsertSchema(purchaseOrders);
+
+export const businessProfileInsertSchema = createInsertSchema(businessProfile);
+export const businessProfileSelectSchema = createSelectSchema(businessProfile);
 
 export type PaymentMethod = typeof paymentMethods.$inferSelect;
 export type NewPaymentMethod = typeof paymentMethods.$inferInsert;
@@ -297,6 +493,3 @@ export type BusinessLocation = typeof businessLocations.$inferSelect;
 export type NewBusinessLocation = typeof businessLocations.$inferInsert;
 export const BusinessLocationSelect = createSelectSchema(businessLocations);
 export const BusinessLocationInsert = createInsertSchema(businessLocations);
-
-export const businessProfileInsertSchema = createInsertSchema(businessProfile);
-export const businessProfileSelectSchema = createSelectSchema(businessProfile);

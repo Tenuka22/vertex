@@ -1,9 +1,10 @@
-// app/finance/profit-loss/page.tsx
 'use client';
 
 import {
+  AlertCircle,
   ChevronDown,
   Filter,
+  Loader2,
   Plus,
   TrendingDown,
   TrendingUp,
@@ -19,29 +20,66 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Separator } from '@/components/ui/separator';
+import { useProfitLossData, useProfitLossSummary } from '@/hooks/profit-loss';
 
 const PROFIT_THRESHOLD = 0;
 
-const profitLossData = [
-  {
-    id: '1',
-    category: 'Product Sales',
-    revenue: 50_000,
-    expenses: 30_000,
-  },
-  {
-    id: '2',
-    category: 'Consulting',
-    revenue: 20_000,
-    expenses: 10_000,
-  },
-  {
-    id: '3',
-    category: 'Marketing Campaigns',
-    revenue: 10_000,
-    expenses: 15_000,
-  },
-];
+const LoadingSkeleton = ({ className = '' }: { className?: string }) => (
+  <div className={`animate-pulse rounded bg-muted ${className}`} />
+);
+
+const LoadingCard = ({ title }: { title: string }) => (
+  <Card className="shadow-md">
+    <CardHeader>
+      <CardTitle className="flex items-center gap-2">
+        <Loader2 className="h-5 w-5 animate-spin" />
+        {title}
+      </CardTitle>
+    </CardHeader>
+    <CardContent className="space-y-4">
+      <LoadingSkeleton className="h-4 w-3/4" />
+      <LoadingSkeleton className="h-4 w-1/2" />
+      <LoadingSkeleton className="h-4 w-2/3" />
+    </CardContent>
+  </Card>
+);
+
+const EmptyState = () => (
+  <Card className="border-dashed">
+    <CardContent className="p-6">
+      <div className="flex flex-col items-center justify-center space-y-4 text-center">
+        <AlertCircle className="h-12 w-12 text-muted-foreground" />
+        <div className="w-fit">
+          <H2 className="font-semibold text-xl">No Profit & Loss Data</H2>
+          <P>Start by adding your first revenue or expense entry.</P>
+        </div>
+        <Button className="gap-2">
+          <Plus className="h-4 w-4" /> Add First Entry
+        </Button>
+      </div>
+    </CardContent>
+  </Card>
+);
+
+const ErrorState = () => (
+  <Card className="border-destructive">
+    <CardContent className="p-6">
+      <div className="flex flex-col items-center justify-center space-y-4 text-center">
+        <AlertCircle className="h-12 w-12 text-destructive" />
+        <div className="w-fit">
+          <H2 className="font-semibold text-xl">Error Loading Data</H2>
+          <P>
+            There was an error loading your profit and loss data. Please try
+            refreshing the page.
+          </P>
+        </div>
+        <Button onClick={() => window.location.reload()} variant="outline">
+          Refresh Page
+        </Button>
+      </div>
+    </CardContent>
+  </Card>
+);
 
 const formatCurrency = (amount: number) =>
   `$${amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
@@ -55,19 +93,122 @@ const getProfitLossStatus = (revenue: number, expenses: number) => {
 };
 
 const PROFIT_LOSS_PAGE = () => {
-  const totalRevenue = profitLossData.reduce(
-    (acc, item) => acc + item.revenue,
-    0
-  );
-  const totalExpenses = profitLossData.reduce(
-    (acc, item) => acc + item.expenses,
-    0
-  );
-  const netProfit = totalRevenue - totalExpenses;
+  const {
+    data: profitLossData,
+    isFetching: isFetchingData,
+    error: errorData,
+  } = useProfitLossData();
+  const {
+    data: summary,
+    isFetching: isFetchingSummary,
+    error: errorSummary,
+  } = useProfitLossSummary();
+
+  const isFetching = isFetchingData || isFetchingSummary;
+  const hasError = errorData || errorSummary;
+
+  const { totalRevenue, totalExpenses, netProfit } = summary || {
+    totalRevenue: 0,
+    totalExpenses: 0,
+    netProfit: 0,
+  };
+
+  if (isFetching) {
+    return (
+      <main className="relative space-y-8 p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <H2 className="font-bold text-3xl">Profit &amp; Loss</H2>
+            <Muted>
+              Track your revenue, expenses, and overall financial performance
+            </Muted>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button disabled size="sm" variant="outline">
+              <Filter className="mr-2 h-4 w-4" />
+              Filter
+              <ChevronDown className="ml-1 h-4 w-4" />
+            </Button>
+            <Button disabled size="sm">
+              <Plus className="mr-2 h-4 w-4" />
+              Add Entry
+            </Button>
+          </div>
+        </div>
+
+        <Separator />
+
+        <div className="grid gap-4 sm:grid-cols-3">
+          <LoadingCard title="Loading Revenue..." />
+          <LoadingCard title="Loading Expenses..." />
+          <LoadingCard title="Loading Net Profit..." />
+        </div>
+
+        <Separator />
+
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 3 }).map((_) => (
+            <LoadingCard
+              key={crypto.randomUUID()}
+              title="Loading Category..."
+            />
+          ))}
+        </div>
+      </main>
+    );
+  }
+
+  if (hasError) {
+    return (
+      <main className="relative space-y-8 p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <H2 className="font-bold text-3xl">Profit &amp; Loss</H2>
+            <Muted>
+              Track your revenue, expenses, and overall financial performance
+            </Muted>
+          </div>
+        </div>
+
+        <Separator />
+
+        <ErrorState />
+      </main>
+    );
+  }
+
+  if (!profitLossData || profitLossData.length === 0) {
+    return (
+      <main className="relative space-y-8 p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <H2 className="font-bold text-3xl">Profit &amp; Loss</H2>
+            <Muted>
+              Track your revenue, expenses, and overall financial performance
+            </Muted>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button size="sm" variant="outline">
+              <Filter className="mr-2 h-4 w-4" />
+              Filter
+              <ChevronDown className="ml-1 h-4 w-4" />
+            </Button>
+            <Button size="sm">
+              <Plus className="mr-2 h-4 w-4" />
+              Add Entry
+            </Button>
+          </div>
+        </div>
+
+        <Separator />
+
+        <EmptyState />
+      </main>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <H2>Profit &amp; Loss</H2>
@@ -99,7 +240,6 @@ const PROFIT_LOSS_PAGE = () => {
 
       <Separator />
 
-      {/* Summary */}
       <div className="grid gap-4 sm:grid-cols-3">
         <Card>
           <CardHeader>
@@ -148,7 +288,6 @@ const PROFIT_LOSS_PAGE = () => {
 
       <Separator />
 
-      {/* Detailed Breakdown */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {profitLossData.map((item) => {
           const status = getProfitLossStatus(item.revenue, item.expenses);

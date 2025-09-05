@@ -7,6 +7,10 @@
     "dev": "tsc --watch"
   },
   "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./dist/index.js"
+    },
     "./*": {
       "types": "./src/*.ts",
       "default": "./dist/*.js"
@@ -19,7 +23,7 @@
     "typescript": "^5"
   },
   "dependencies": {
-    "drizzle-orm": "^0.44.4",
+    "drizzle-orm": "^0.44.5",
     "drizzle-zod": "^0.8.3"
   }
 }

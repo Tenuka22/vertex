@@ -38,3 +38,9 @@ export const paymentMethodEnum = pgEnum('payment_method', [
   'DIGITAL_WALLET',
   'OTHER',
 ]);
+
+export const balanceSheetItemTypeEnum = pgEnum('balance_sheet_item_type', [
+  'ASSET',
+  'LIABILITY',
+  'EQUITY',
+]);

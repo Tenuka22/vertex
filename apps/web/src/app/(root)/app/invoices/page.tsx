@@ -1,10 +1,12 @@
-// app/invoices/page.tsx
+'use client';
 
 import {
+  AlertCircle,
   Calendar,
   ChevronDown,
   DollarSign,
   Filter,
+  Loader2,
   Plus,
   Receipt,
 } from 'lucide-react';
@@ -19,45 +21,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Separator } from '@/components/ui/separator';
-
-const invoices = [
-  {
-    id: 'inv1',
-    customer: 'John Doe',
-    amount: 1200,
-    status: 'paid',
-    issueDate: '2025-08-20',
-    dueDate: '2025-08-30',
-    invoiceNumber: 'INV-001',
-  },
-  {
-    id: 'inv2',
-    customer: 'Jane Smith',
-    amount: 450,
-    status: 'pending',
-    issueDate: '2025-08-18',
-    dueDate: '2025-09-01',
-    invoiceNumber: 'INV-002',
-  },
-  {
-    id: 'inv3',
-    customer: 'Michael Johnson',
-    amount: 980,
-    status: 'overdue',
-    issueDate: '2025-07-28',
-    dueDate: '2025-08-10',
-    invoiceNumber: 'INV-003',
-  },
-  {
-    id: 'inv4',
-    customer: 'Alice Brown',
-    amount: 2100,
-    status: 'paid',
-    issueDate: '2025-08-15',
-    dueDate: '2025-08-25',
-    invoiceNumber: 'INV-004',
-  },
-];
+import { useUserInvoices } from '@/hooks/invoices';
 
 const getStatusBadge = (status: string) => {
   switch (status) {
@@ -72,17 +36,229 @@ const getStatusBadge = (status: string) => {
   }
 };
 
-const formatDate = (date: string) => {
-  return new Date(date).toLocaleDateString('en-US', {
+const formatDate = (date: string | Date) => {
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  return dateObj.toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric',
   });
 };
 
+const LoadingSkeleton = ({ className = '' }: { className?: string }) => (
+  <div className={`animate-pulse rounded bg-muted ${className}`} />
+);
+
+const LoadingCard = () => (
+  <Card className="shadow-md">
+    <CardHeader>
+      <CardTitle className="flex items-center gap-2">
+        <Loader2 className="h-5 w-5 animate-spin" />
+        Loading Invoice...
+      </CardTitle>
+    </CardHeader>
+    <CardContent className="space-y-4">
+      <LoadingSkeleton className="h-4 w-3/4" />
+      <LoadingSkeleton className="h-4 w-1/2" />
+      <LoadingSkeleton className="h-4 w-2/3" />
+    </CardContent>
+  </Card>
+);
+
+const EmptyStateCard = () => (
+  <Card className="shadow-md">
+    <CardHeader>
+      <CardTitle className="flex items-center gap-2">
+        <AlertCircle className="h-5 w-5" /> No Invoices
+      </CardTitle>
+    </CardHeader>
+    <CardContent className="py-8 text-center">
+      <AlertCircle className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
+      <p className="text-muted-foreground">
+        You haven't created any invoices yet. Click "New Invoice" to get
+        started.
+      </p>
+    </CardContent>
+  </Card>
+);
+
+const ErrorState = () => (
+  <Card className="border-destructive">
+    <CardContent className="p-6">
+      <div className="flex flex-col items-center justify-center space-y-4 text-center">
+        <AlertCircle className="h-12 w-12 text-destructive" />
+        <div className="w-fit">
+          <H2 className="font-semibold text-xl">Error Loading Data</H2>
+          <P>
+            There was an error loading your invoices. Please try refreshing the
+            page.
+          </P>
+        </div>
+        <Button onClick={() => window.location.reload()} variant="outline">
+          Refresh Page
+        </Button>
+      </div>
+    </CardContent>
+  </Card>
+);
+
 const InvoicesPage = () => {
+  const { data: invoices, isFetching, error } = useUserInvoices();
+
+  if (isFetching) {
+    return (
+      <main className="relative space-y-8 p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <H2 className="font-bold text-3xl">Invoices</H2>
+            <Muted>
+              Manage all customer invoices and their payment statuses.
+            </Muted>
+          </div>
+          <div className="flex gap-2">
+            <Button className="gap-2" disabled variant="outline">
+              <Filter className="h-4 w-4" /> Filter
+            </Button>
+            <Button className="gap-2" disabled>
+              <Plus className="h-4 w-4" /> New Invoice
+            </Button>
+          </div>
+        </div>
+
+        <Separator />
+
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 3 }).map(() => (
+            <LoadingCard key={crypto.randomUUID()} />
+          ))}
+        </div>
+      </main>
+    );
+  }
+
+  if (error) {
+    return (
+      <main className="relative space-y-8 p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <H2 className="font-bold text-3xl">Invoices</H2>
+            <Muted>
+              Manage all customer invoices and their payment statuses.
+            </Muted>
+          </div>
+        </div>
+
+        <Separator />
+
+        <ErrorState />
+      </main>
+    );
+  }
+
+  if (!invoices || invoices.length === 0) {
+    return (
+      <main className="relative space-y-8 p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <H2 className="font-bold text-3xl">Invoices</H2>
+            <Muted>
+              Manage all customer invoices and their payment statuses.
+            </Muted>
+          </div>
+          <div className="flex gap-2">
+            <Button className="gap-2" variant="outline">
+              <Filter className="h-4 w-4" /> Filter
+            </Button>
+            <Button className="gap-2">
+              <Plus className="h-4 w-4" /> New Invoice
+            </Button>
+          </div>
+        </div>
+
+        <Separator />
+
+        <EmptyStateCard />
+      </main>
+    );
+  }
+
+  if (isFetching) {
+    return (
+      <main className="relative space-y-8 p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <H2 className="font-bold text-3xl">Invoices</H2>
+            <Muted>
+              Manage all customer invoices and their payment statuses.
+            </Muted>
+          </div>
+          <div className="flex gap-2">
+            <Button className="gap-2" disabled variant="outline">
+              <Filter className="h-4 w-4" /> Filter
+            </Button>
+            <Button className="gap-2" disabled>
+              <Plus className="h-4 w-4" /> New Invoice
+            </Button>
+          </div>
+        </div>
+
+        <Separator />
+
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 3 }).map(() => (
+            <LoadingCard key={crypto.randomUUID()} />
+          ))}
+        </div>
+      </main>
+    );
+  }
+
+  if (error) {
+    return (
+      <main className="relative space-y-8 p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <H2 className="font-bold text-3xl">Invoices</H2>
+            <Muted>
+              Manage all customer invoices and their payment statuses.
+            </Muted>
+          </div>
+        </div>
+
+        <Separator />
+
+        <ErrorState />
+      </main>
+    );
+  }
+
+  if (!invoices || invoices.length === 0) {
+    return (
+      <main className="relative space-y-8 p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <H2 className="font-bold text-3xl">Invoices</H2>
+            <Muted>
+              Manage all customer invoices and their payment statuses.
+            </Muted>
+          </div>
+          <div className="flex gap-2">
+            <Button className="gap-2" variant="outline">
+              <Filter className="h-4 w-4" /> Filter
+            </Button>
+            <Button className="gap-2">
+              <Plus className="h-4 w-4" /> New Invoice
+            </Button>
+          </div>
+        </div>
+
+        <Separator />
+
+        <EmptyStateCard />
+      </main>
+    );
+  }
   return (
     <main className="relative space-y-8 p-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <H2 className="font-bold text-3xl">Invoices</H2>
@@ -102,7 +278,6 @@ const InvoicesPage = () => {
 
       <Separator />
 
-      {/* Invoices Grid */}
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
         {invoices.map((invoice) => {
           const statusInfo = getStatusBadge(invoice.status);
@@ -160,7 +335,9 @@ const InvoicesPage = () => {
                 <div className="flex items-center justify-between font-semibold text-lg">
                   <span className="flex items-center gap-1">
                     <DollarSign className="h-4 w-4" />
-                    {invoice.amount}
+                    {typeof invoice.amount === 'string'
+                      ? Number.parseFloat(invoice.amount)
+                      : invoice.amount}
                   </span>
                 </div>
               </CardContent>
@@ -169,7 +346,6 @@ const InvoicesPage = () => {
         })}
       </div>
 
-      {/* Create CTA */}
       <Card className="border-dashed">
         <CardContent className="p-6">
           <div className="flex flex-col items-center justify-center space-y-4 text-center">

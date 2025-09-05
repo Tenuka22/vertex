@@ -7,8 +7,10 @@ import {
   Heart,
   Home,
   type LucideIcon,
+  Package,
   Plus,
   ShoppingBag,
+  TrendingUp,
   Utensils,
 } from 'lucide-react';
 
@@ -25,6 +27,11 @@ const ExpenseCategoryMeta: Record<
     name: 'Housing',
     icon: Home,
     color: 'bg-green-500',
+  },
+  SALES: {
+    name: 'Sales',
+    icon: TrendingUp,
+    color: 'bg-emerald-500',
   },
   FOOD: {
     name: 'Food & Dining',
@@ -50,6 +57,11 @@ const ExpenseCategoryMeta: Record<
     name: 'Healthcare',
     icon: Heart,
     color: 'bg-red-500',
+  },
+  SUPPLIES: {
+    name: 'Supplies',
+    icon: Package,
+    color: 'bg-amber-500',
   },
   OPTIONAL: {
     name: 'Other',

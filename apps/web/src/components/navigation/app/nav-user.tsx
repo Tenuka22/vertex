@@ -60,8 +60,8 @@ export const NavUser = () => {
               <UserLayout
                 user={
                   user ?? {
-                    email: 'user@govi-plus.co',
-                    name: 'Govi User',
+                    email: 'user@vertex-plus.co',
+                    name: 'Vertex User',
                     image: '',
                   }
                 }
@@ -79,8 +79,8 @@ export const NavUser = () => {
               <UserLayout
                 user={
                   user ?? {
-                    email: 'user@govi-plus.co',
-                    name: 'Govi User',
+                    email: 'user@vertex-plus.co',
+                    name: 'Vertex User',
                     image: '',
                   }
                 }

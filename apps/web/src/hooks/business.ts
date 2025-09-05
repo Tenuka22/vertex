@@ -14,3 +14,19 @@ export const useUserBusinessProfile = () =>
     queryKey: ['user', 'businessProfile'],
     initialData: undefined,
   });
+
+export const useUserBusinessLocations = (
+  businessProfileId: string | undefined
+) =>
+  useQuery({
+    queryFn: async () =>
+      await orpc.businessLocation.get.call({
+        businessProfileId: businessProfileId as string,
+      }),
+    queryKey: [
+      businessProfileId ? businessProfileId : 'unknown',
+      'businessLocations',
+    ],
+    initialData: [],
+    enabled: !!businessProfileId,
+  });
