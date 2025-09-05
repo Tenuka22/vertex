@@ -22,7 +22,7 @@ import { useUserInventory } from '@/hooks/inventory';
 import { cn } from '@/lib/utils';
 
 const STOCK_MANAGEMENT_PAGE = () => {
-  const { data: stockItems, isLoading, error } = useUserInventory();
+  const { data: stockItems, isFetching, error } = useUserInventory();
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -46,7 +46,7 @@ const STOCK_MANAGEMENT_PAGE = () => {
 
   const MAX_PROGRESS = 100;
 
-  if (isLoading) {
+  if (isFetching) {
     return (
       <main className="relative space-y-8 p-6">
         <div className="flex items-center justify-between">
@@ -153,7 +153,6 @@ const STOCK_MANAGEMENT_PAGE = () => {
 
   return (
     <main className="relative space-y-8 p-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <H2 className="font-bold text-3xl">Stock Management</H2>
@@ -168,7 +167,6 @@ const STOCK_MANAGEMENT_PAGE = () => {
 
       <Separator />
 
-      {/* Stock Grid */}
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
         {(stockItems || []).map((item) => {
           const statusInfo = getStatusBadge(item.product?.status || 'unknown');

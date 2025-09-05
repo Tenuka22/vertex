@@ -23,12 +23,10 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { useUserPaymentMethods } from '@/hooks/payments';
 
-// Loading skeleton component
 const LoadingSkeleton = ({ className = '' }: { className?: string }) => (
   <div className={`animate-pulse rounded bg-muted ${className}`} />
 );
 
-// Loading card placeholder
 const LoadingCard = () => (
   <Card className="shadow-md">
     <CardHeader>
@@ -45,7 +43,6 @@ const LoadingCard = () => (
   </Card>
 );
 
-// Empty state card
 const EmptyStateCard = () => (
   <Card className="shadow-md">
     <CardHeader>
@@ -64,7 +61,7 @@ const EmptyStateCard = () => (
 );
 
 const PAYMENT_METHODS_PAGE = () => {
-  const { data: paymentMethods, isLoading, error } = useUserPaymentMethods();
+  const { data: paymentMethods, isFetching, error } = useUserPaymentMethods();
 
   const getStatusBadge = (isActive: boolean) => ({
     color: isActive
@@ -96,7 +93,7 @@ const PAYMENT_METHODS_PAGE = () => {
     });
   };
 
-  if (isLoading) {
+  if (isFetching) {
     return (
       <main className="space-y-8 p-6">
         <H2 className="font-bold text-3xl">Payment Methods</H2>
@@ -132,7 +129,6 @@ const PAYMENT_METHODS_PAGE = () => {
 
   return (
     <main className="relative space-y-8 p-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <H2 className="font-bold text-3xl">Payment Methods</H2>
@@ -152,7 +148,6 @@ const PAYMENT_METHODS_PAGE = () => {
 
       <Separator />
 
-      {/* Content */}
       {paymentMethods.length === 0 ? (
         <EmptyStateCard />
       ) : (
@@ -241,7 +236,6 @@ const PAYMENT_METHODS_PAGE = () => {
         </div>
       )}
 
-      {/* CTA */}
       <Card className="border-dashed">
         <CardContent className="p-6">
           <div className="flex flex-col items-center justify-center space-y-4 text-center">

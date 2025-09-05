@@ -550,12 +550,12 @@ const Timeline = ({ data }: { data: PartialBusinessData }) => {
 const COMPANY_PAGE = () => {
   const {
     data: businessInfo,
-    isLoading: isLoadingInfo,
+    isFetching: isFetchingInfo,
     error: infoError,
   } = useUserBusinessInformation();
   const {
     data: businessProfile,
-    isLoading: isLoadingProfile,
+    isFetching: isFetchingProfile,
     error: profileError,
   } = useUserBusinessProfile();
 
@@ -567,10 +567,10 @@ const COMPANY_PAGE = () => {
     [businessInfo, businessProfile]
   );
 
-  const isLoading = isLoadingInfo || isLoadingProfile;
+  const isFetching = isFetchingInfo || isFetchingProfile;
   const hasError = infoError || profileError;
 
-  if (isLoading) {
+  if (isFetching) {
     return (
       <main className="space-y-8 p-6">
         <Card className="shadow-md">
@@ -584,7 +584,7 @@ const COMPANY_PAGE = () => {
           </CardHeader>
         </Card>
         <div className="grid gap-4 lg:grid-cols-2">
-          <div className="space-y-6 xl:col-span-2">
+          <div className="space-y-6">
             <LoadingCard title="Loading Company Overview..." />
             <LoadingCard title="Loading Contact Information..." />
             <LoadingCard title="Loading Account Settings..." />
@@ -626,7 +626,7 @@ const COMPANY_PAGE = () => {
     <main className="space-y-8 p-6">
       <CompanyHeader data={business} />
       <div className="grid gap-4 lg:grid-cols-2">
-        <div className="space-y-6 xl:col-span-2">
+        <div className="space-y-6">
           <CompanyOverview data={business} />
           <MissionVision data={business} />
           <ContactCard data={business} />

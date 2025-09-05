@@ -420,20 +420,20 @@ const Timeline = ({ data }: { data: PartialLocationData }) => {
 const LOCATIONS_PAGE = () => {
   const {
     data: businessProfile,
-    isLoading: isLoadingProfile,
+    isFetching: isFetchingProfile,
     error: profileError,
   } = useUserBusinessProfile();
 
   const {
     data: businessLocations,
-    isLoading: isLoadingLocations,
+    isFetching: isFetchingLocations,
     error: locationsError,
   } = useUserBusinessLocations(businessProfile?.id);
 
-  const isLoading = isLoadingProfile || isLoadingLocations;
+  const isFetching = isFetchingProfile || isFetchingLocations;
   const hasError = profileError || locationsError;
 
-  if (isLoading) {
+  if (isFetching) {
     return (
       <main className="space-y-8 p-6">
         <Card className="shadow-md">
@@ -447,7 +447,7 @@ const LOCATIONS_PAGE = () => {
           </CardHeader>
         </Card>
         <div className="grid gap-4 lg:grid-cols-2">
-          <div className="space-y-6 xl:col-span-2">
+          <div className="space-y-6">
             <LoadingCard title="Loading Location Overview..." />
             <LoadingCard title="Loading Contact Information..." />
             <LoadingCard title="Loading Address Information..." />
@@ -526,7 +526,7 @@ const LOCATIONS_PAGE = () => {
       {businessLocations.map((location) => (
         <div key={location.id}>
           <div className="grid gap-4 lg:grid-cols-2">
-            <div className="space-y-6 xl:col-span-2">
+            <div className="space-y-6">
               <LocationHeader data={location} />
               <LocationOverview data={location} />
               <ContactCard data={location} />

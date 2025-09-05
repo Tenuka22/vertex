@@ -73,13 +73,12 @@ const getBudgetStatus = (spent: number, allocated: number) => {
 };
 
 const BUDGET_PLANNING_PAGE = () => {
-  const { data: budgets, isLoading, error } = useUserBudgets();
-
+  const { data: budgets, isFetching, error } = useUserBudgets();
   const formatCurrency = (amount: number | string) => {
     return Number(amount).toLocaleString();
   };
 
-  if (isLoading) {
+  if (isFetching) {
     return (
       <main className="space-y-8 p-6">
         <H2 className="font-bold text-3xl">Budget Planning</H2>
@@ -201,7 +200,6 @@ const BUDGET_PLANNING_PAGE = () => {
         </div>
       )}
 
-      {/* Create CTA */}
       <Card className="border-dashed">
         <CardContent className="p-6">
           <div className="flex flex-col items-center justify-center space-y-4 text-center">

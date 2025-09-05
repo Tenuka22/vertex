@@ -42,7 +42,7 @@ type PurchaseOrder = {
 };
 
 const ORDERS_PAGE = () => {
-  const { data: orders, isLoading, error } = useUserPurchaseOrders();
+  const { data: orders, isFetching, error } = useUserPurchaseOrders();
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -66,7 +66,7 @@ const ORDERS_PAGE = () => {
     }
   };
 
-  if (isLoading) {
+  if (isFetching) {
     return (
       <main className="relative space-y-8 p-6">
         <div className="flex items-center justify-between">
@@ -186,7 +186,6 @@ const ORDERS_PAGE = () => {
 
   return (
     <main className="relative space-y-8 p-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <H2 className="font-bold text-3xl">Supplier Orders</H2>
@@ -206,7 +205,6 @@ const ORDERS_PAGE = () => {
 
       <Separator />
 
-      {/* Orders Grid */}
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
         {(orders || []).map((order: PurchaseOrder) => {
           const statusInfo = getStatusBadge(order.status);
@@ -277,7 +275,6 @@ const ORDERS_PAGE = () => {
         })}
       </div>
 
-      {/* Create CTA */}
       <Card className="border-dashed">
         <CardContent className="p-6">
           <div className="flex flex-col items-center justify-center space-y-4 text-center">

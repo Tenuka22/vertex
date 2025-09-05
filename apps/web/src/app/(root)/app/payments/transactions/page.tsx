@@ -61,7 +61,7 @@ const EmptyStateCard = () => (
 );
 
 const TRANSACTIONS_PAGE = () => {
-  const { data: transactions, isLoading, error } = useUserTransactions();
+  const { data: transactions, isFetching, error } = useUserTransactions();
 
   const getTransactionIcon = (type: string) =>
     type === 'PAYMENT' ? (
@@ -90,7 +90,7 @@ const TRANSACTIONS_PAGE = () => {
   const formatCurrency = (amount: number | string) =>
     `$${Number(amount).toLocaleString()}`;
 
-  if (isLoading) {
+  if (isFetching) {
     return (
       <main className="space-y-8 p-6">
         <H2 className="font-bold text-3xl">Transactions</H2>

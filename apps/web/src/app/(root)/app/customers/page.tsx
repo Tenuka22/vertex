@@ -70,9 +70,9 @@ const getStatusBadge = (isActive: boolean, isPrimary: boolean) => {
 };
 
 const CustomersPage = () => {
-  const { data: contacts, isLoading, error } = useUserBusinessContacts();
+  const { data: contacts, isFetching, error } = useUserBusinessContacts();
 
-  if (isLoading) {
+  if (isFetching) {
     return (
       <main className="space-y-8 p-6">
         <H2 className="font-bold text-3xl">Customers</H2>
@@ -208,7 +208,6 @@ const CustomersPage = () => {
         </div>
       )}
 
-      {/* Create CTA */}
       <Card className="border-dashed">
         <CardContent className="p-6">
           <div className="flex flex-col items-center justify-center space-y-4 text-center">

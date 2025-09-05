@@ -23,7 +23,6 @@ export const createUpdateTransaction = protectedProcedure
     const { transactionData } = input;
     const businessProfileId = await getBusinessProfileId(context);
 
-    // Check if updating and validate ownership
     const existingTransaction = transactionData.id
       ? await db
           .select()
@@ -42,7 +41,6 @@ export const createUpdateTransaction = protectedProcedure
       );
     }
 
-    // Upsert
     const insertedUpdatedTransaction = await db
       .insert(transactions)
       .values({ ...transactionData, businessProfileId })

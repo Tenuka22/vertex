@@ -20,7 +20,6 @@ export const getProfitLossData = protectedProcedure
       : new Date(new Date().getFullYear(), 0, 1);
     const endDate = input.endDate ? new Date(input.endDate) : new Date();
 
-    // Get revenue (income transactions)
     const revenueData = await db
       .select({
         category: expenseCategories.name,
@@ -41,7 +40,6 @@ export const getProfitLossData = protectedProcedure
       )
       .groupBy(expenseCategories.name);
 
-    // Get expenses (expense transactions)
     const expenseData = await db
       .select({
         category: expenseCategories.name,
@@ -62,7 +60,6 @@ export const getProfitLossData = protectedProcedure
       )
       .groupBy(expenseCategories.name);
 
-    // Combine revenue and expense data
     const categories = new Set([
       ...revenueData.map((r) => r.category),
       ...expenseData.map((e) => e.category),
@@ -100,7 +97,6 @@ export const getProfitLossSummary = protectedProcedure
       : new Date(new Date().getFullYear(), 0, 1);
     const endDate = input.endDate ? new Date(input.endDate) : new Date();
 
-    // Get total revenue
     const totalRevenueResult = await db
       .select({
         total: sum(transactions.amount),
@@ -115,7 +111,6 @@ export const getProfitLossSummary = protectedProcedure
         )
       );
 
-    // Get total expenses
     const totalExpensesResult = await db
       .select({
         total: sum(transactions.amount),

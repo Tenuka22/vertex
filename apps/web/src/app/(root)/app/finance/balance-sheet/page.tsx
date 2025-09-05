@@ -129,17 +129,15 @@ const getTypeColor = (type: string) => {
 const BALANCE_SHEET_PAGE = () => {
   const {
     data: balanceSheetItems,
-    isLoading,
+    isFetching,
     error,
   } = useUserBalanceSheetItems();
 
-  // Use only database data
   const displayItems = balanceSheetItems || [];
 
-  if (isLoading) {
+  if (isFetching) {
     return (
       <main className="relative space-y-8 p-6">
-        {/* Header */}
         <div className="flex items-center justify-between">
           <div>
             <H2 className="font-bold text-3xl">Balance Sheet</H2>
@@ -157,7 +155,6 @@ const BALANCE_SHEET_PAGE = () => {
 
         <Separator />
 
-        {/* Loading Cards */}
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 6 }).map(() => (
             <LoadingCard key={crypto.randomUUID()} />
@@ -170,7 +167,6 @@ const BALANCE_SHEET_PAGE = () => {
   if (error) {
     return (
       <main className="relative space-y-8 p-6">
-        {/* Header */}
         <div className="flex items-center justify-between">
           <div>
             <H2 className="font-bold text-3xl">Balance Sheet</H2>
@@ -188,7 +184,6 @@ const BALANCE_SHEET_PAGE = () => {
   if (!displayItems || displayItems.length === 0) {
     return (
       <main className="relative space-y-8 p-6">
-        {/* Header */}
         <div className="flex items-center justify-between">
           <div>
             <H2 className="font-bold text-3xl">Balance Sheet</H2>
@@ -213,7 +208,6 @@ const BALANCE_SHEET_PAGE = () => {
 
   return (
     <main className="relative space-y-8 p-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <H2 className="font-bold text-3xl">Balance Sheet</H2>
@@ -231,7 +225,6 @@ const BALANCE_SHEET_PAGE = () => {
 
       <Separator />
 
-      {/* Balance Sheet Cards */}
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
         {displayItems.map((item) => {
           const badge = getTypeBadge(item.type);
@@ -288,7 +281,6 @@ const BALANCE_SHEET_PAGE = () => {
         })}
       </div>
 
-      {/* Create CTA */}
       <Card className="border-dashed">
         <CardContent className="p-6">
           <div className="flex flex-col items-center justify-center space-y-4 text-center">

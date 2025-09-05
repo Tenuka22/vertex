@@ -3,7 +3,10 @@ import { orpc } from '@/utils/orpc';
 
 export const useUserBusinessContacts = () =>
   useQuery({
-    queryFn: async () => await orpc.businessContact.get.call(),
+    queryFn: async () => {
+      const data = await orpc.businessContact.get.call();
+      return data;
+    },
     queryKey: ['user', 'businessContacts'],
     initialData: [],
   });

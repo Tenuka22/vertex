@@ -63,16 +63,16 @@ const EmptyStateCard = () => (
 const EXPENSE_CATEGORIES_PAGE = () => {
   const {
     data: expenseCategories,
-    isLoading: isLoadingCategories,
+    isFetching: isFetchingCategories,
     error: categoriesError,
   } = useUserExpenseCategories();
   const {
     data: expenses,
-    isLoading: isLoadingExpenses,
+    isFetching: isFetchingExpenses,
     error: expensesError,
   } = useUserExpenses();
 
-  const isLoading = isLoadingCategories || isLoadingExpenses;
+  const isFetching = isFetchingCategories || isFetchingExpenses;
   const hasError = categoriesError || expensesError;
 
   const categoriesWithExpenses = expenseCategories.map((category) => {
@@ -104,7 +104,7 @@ const EXPENSE_CATEGORIES_PAGE = () => {
       : { color: 'bg-gray-100 text-gray-800', text: 'Inactive' };
   };
 
-  if (isLoading) {
+  if (isFetching) {
     return (
       <main className="space-y-8 p-6">
         <H2 className="font-bold text-3xl">Expense Categories</H2>
