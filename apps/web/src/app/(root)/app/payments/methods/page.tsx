@@ -148,11 +148,11 @@ const PAYMENT_METHODS_PAGE = () => {
 
       <Separator />
 
-      {paymentMethods.length === 0 ? (
+      {paymentMethods?.length === 0 ? (
         <EmptyStateCard />
       ) : (
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {paymentMethods.map((method) => {
+          {paymentMethods?.map((method) => {
             const statusInfo = getStatusBadge(method.isActive);
             const d = method.details || {};
 

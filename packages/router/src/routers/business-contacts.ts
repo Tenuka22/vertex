@@ -71,11 +71,12 @@ export const getUserBusinessContacts = protectedProcedure.handler(
     if (!businessProfileId) {
       return [];
     }
-
-    return await db
+    const data = await db
       .select()
       .from(businessContacts)
       .where(eq(businessContacts.businessProfileId, businessProfileId));
+
+    return data;
   }
 );
 

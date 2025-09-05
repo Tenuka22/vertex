@@ -3,7 +3,7 @@ import { db as creatDB } from '@repo/db';
 import * as schema from '@repo/db/schema/auth';
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
-import { openAPI } from 'better-auth/plugins';
+import { bearer, openAPI } from 'better-auth/plugins';
 
 export const authClient = ({
   BETTER_AUTH_SECRET,
@@ -52,6 +52,7 @@ export const authClient = ({
       },
     },
     plugins: [
+      bearer(),
       openAPI({
         path: '/docs',
       }),

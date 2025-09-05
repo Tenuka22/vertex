@@ -123,11 +123,11 @@ const CustomersPage = () => {
 
       <Separator />
 
-      {contacts.length === 0 ? (
+      {contacts?.length === 0 ? (
         <EmptyStateCard />
       ) : (
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {contacts.map((contact) => {
+          {contacts?.map((contact) => {
             const statusInfo = getStatusBadge(
               contact.isActive ?? false,
               contact.isPrimary ?? false

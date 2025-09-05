@@ -478,7 +478,10 @@ const LOCATIONS_PAGE = () => {
           <div className="relative h-full">
             <div className="sticky top-4 space-y-6 pb-4">
               <BusinessLocationForm
-                defaultData={{ businessProfileId: businessProfile?.id, id: '' }}
+                defaultData={{
+                  businessProfileId: businessProfile?.id || '',
+                  id: '',
+                }}
               />
             </div>
           </div>
@@ -499,7 +502,7 @@ const LOCATIONS_PAGE = () => {
     );
   }
 
-  if (businessLocations.length === 0) {
+  if (businessLocations?.length === 0) {
     return (
       <main className="space-y-8 p-6">
         <EmptyStateCard
@@ -523,7 +526,7 @@ const LOCATIONS_PAGE = () => {
 
   return (
     <main className="space-y-8 p-6">
-      {businessLocations.map((location) => (
+      {businessLocations?.map((location) => (
         <div key={location.id}>
           <div className="grid gap-4 lg:grid-cols-2">
             <div className="space-y-6">
@@ -544,9 +547,9 @@ const LOCATIONS_PAGE = () => {
               </div>
             </div>
           </div>
-          {businessLocations.length > 1 &&
-            businessLocations.indexOf(location) <
-              businessLocations.length - 1 && <Separator className="my-8" />}
+          {businessLocations?.length > 1 &&
+            businessLocations?.indexOf(location) <
+              businessLocations?.length - 1 && <Separator className="my-8" />}
         </div>
       ))}
     </main>

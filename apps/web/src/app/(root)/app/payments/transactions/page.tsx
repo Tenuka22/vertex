@@ -143,11 +143,11 @@ const TRANSACTIONS_PAGE = () => {
 
       <Separator />
 
-      {transactions.length === 0 ? (
+      {transactions?.length === 0 ? (
         <EmptyStateCard />
       ) : (
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {transactions.map((tx) => {
+          {transactions?.map((tx) => {
             const txAmount = Number(tx.amount);
             const statusInfo = getStatusBadge(
               tx.type === 'PAYMENT' ? txAmount : -txAmount

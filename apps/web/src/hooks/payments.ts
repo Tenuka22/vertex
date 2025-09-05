@@ -2,15 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { orpc } from '@/utils/orpc';
 
 export const useUserPaymentMethods = () =>
-  useQuery({
-    queryFn: async () => await orpc.payment.get.call(),
-    queryKey: ['user', 'paymentMethods'],
-    initialData: [],
-  });
+  useQuery(orpc.payment.get.queryOptions({}));
 
 export const useUserTransactions = () =>
-  useQuery({
-    queryFn: async () => await orpc.transaction.get.call(),
-    queryKey: ['user', 'transactions'],
-    initialData: [],
-  });
+  useQuery(orpc.transaction.get.queryOptions({}));

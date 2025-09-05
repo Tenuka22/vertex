@@ -129,11 +129,11 @@ const BUDGET_PLANNING_PAGE = () => {
 
       <Separator />
 
-      {budgets.length === 0 ? (
+      {budgets?.length === 0 ? (
         <EmptyStateCard />
       ) : (
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {budgets.map((budget) => {
+          {budgets?.map((budget) => {
             const allocated = Number(budget.allocatedAmount);
             const spent = Number(budget.spentAmount);
             const status = getBudgetStatus(spent, allocated);

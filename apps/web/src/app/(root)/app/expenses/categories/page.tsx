@@ -75,17 +75,20 @@ const EXPENSE_CATEGORIES_PAGE = () => {
   const isFetching = isFetchingCategories || isFetchingExpenses;
   const hasError = categoriesError || expensesError;
 
-  const categoriesWithExpenses = expenseCategories.map((category) => {
-    const categoryExpenses = expenses.filter(
-      (expense) => expense.expenses?.expenseCategoryId === category.id
-    );
-    return {
-      ...category,
-      ...getCategoryMeta(category),
-      expenses: categoryExpenses,
-      expenseCount: categoryExpenses.length,
-    };
-  });
+  const categoriesWithExpenses =
+    expenseCategories && expenses
+      ? expenseCategories.map((category) => {
+          const categoryExpenses = expenses.filter(
+            (expense) => expense.expenses?.expenseCategoryId === category.id
+          );
+          return {
+            ...category,
+            ...getCategoryMeta(category),
+            expenses: categoryExpenses,
+            expenseCount: categoryExpenses.length,
+          };
+        })
+      : [];
 
   const formatDate = (date?: Date | string) => {
     if (!date) {
