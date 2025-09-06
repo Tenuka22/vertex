@@ -1,9 +1,10 @@
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
+import LoadingSpinner from '@/components/global/page-loader';
 
-const CALLBACK_PAGE = () => {
+const CallbackHandler = () => {
   const params = useSearchParams();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
@@ -18,10 +19,16 @@ const CALLBACK_PAGE = () => {
   }, [params, router]);
 
   if (loading) {
-    return <div>Loading...</div>;
+    return <LoadingSpinner />;
   }
 
   return null;
 };
 
-export default CALLBACK_PAGE;
+export default function CALLBACK_PAGE() {
+  return (
+    <Suspense fallback={<LoadingSpinner />}>
+      <CallbackHandler />
+    </Suspense>
+  );
+}
