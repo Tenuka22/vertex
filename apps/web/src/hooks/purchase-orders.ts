@@ -1,5 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
-import { orpc } from '@/utils/orpc';
+import { client } from '@/utils/orpc';
 
 export const useUserPurchaseOrders = () =>
-  useQuery(orpc.purchaseOrder.get.queryOptions({}));
+  useQuery({
+    queryFn: async () => await client.purchaseOrder.get(),
+    queryKey: ['user', 'purchaseOrders'],
+  });

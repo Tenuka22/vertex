@@ -22,7 +22,7 @@ import { useUserInventory } from '@/hooks/inventory';
 import { cn } from '@/lib/utils';
 
 const STOCK_MANAGEMENT_PAGE = () => {
-  const { data: stockItems, isFetching, error } = useUserInventory();
+  const { data: stockItems, isLoading, error } = useUserInventory();
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -46,7 +46,7 @@ const STOCK_MANAGEMENT_PAGE = () => {
 
   const MAX_PROGRESS = 100;
 
-  if (isFetching) {
+  if (isLoading) {
     return (
       <main className="relative space-y-8 p-6">
         <div className="flex items-center justify-between">

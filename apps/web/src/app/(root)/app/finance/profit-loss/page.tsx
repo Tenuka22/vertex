@@ -95,16 +95,16 @@ const getProfitLossStatus = (revenue: number, expenses: number) => {
 const PROFIT_LOSS_PAGE = () => {
   const {
     data: profitLossData,
-    isFetching: isFetchingData,
+    isLoading: isLoadingData,
     error: errorData,
   } = useProfitLossData();
   const {
     data: summary,
-    isFetching: isFetchingSummary,
+    isLoading: isLoadingSummary,
     error: errorSummary,
   } = useProfitLossSummary();
 
-  const isFetching = isFetchingData || isFetchingSummary;
+  const isLoading = isLoadingData || isLoadingSummary;
   const hasError = errorData || errorSummary;
 
   const { totalRevenue, totalExpenses, netProfit } = summary || {
@@ -113,7 +113,7 @@ const PROFIT_LOSS_PAGE = () => {
     netProfit: 0,
   };
 
-  if (isFetching) {
+  if (isLoading) {
     return (
       <main className="relative space-y-8 p-6">
         <div className="flex items-center justify-between">

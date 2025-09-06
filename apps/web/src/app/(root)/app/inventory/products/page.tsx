@@ -97,9 +97,9 @@ const getStatusBadge = (status: string) => {
 };
 
 const PRODUCTS_SERVICES_PAGE = () => {
-  const { data: offerings, isFetching, error } = useUserProducts();
+  const { data: offerings, isLoading, error } = useUserProducts();
 
-  if (isFetching) {
+  if (isLoading) {
     return (
       <main className="relative space-y-8 p-6">
         <div className="flex items-center justify-between">

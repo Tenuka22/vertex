@@ -550,12 +550,12 @@ const Timeline = ({ data }: { data: PartialBusinessData }) => {
 const COMPANY_PAGE = () => {
   const {
     data: businessInfo,
-    isFetching: isFetchingInfo,
+    isLoading: isLoadingInfo,
     error: infoError,
   } = useUserBusinessInformation();
   const {
     data: businessProfile,
-    isFetching: isFetchingProfile,
+    isLoading: isLoadingProfile,
     error: profileError,
   } = useUserBusinessProfile();
 
@@ -567,10 +567,10 @@ const COMPANY_PAGE = () => {
     [businessInfo, businessProfile]
   );
 
-  const isFetching = isFetchingInfo || isFetchingProfile;
+  const isLoading = isLoadingInfo || isLoadingProfile;
   const hasError = infoError || profileError;
 
-  if (isFetching) {
+  if (isLoading) {
     return (
       <main className="space-y-8 p-6">
         <Card className="shadow-md">

@@ -73,12 +73,12 @@ const getBudgetStatus = (spent: number, allocated: number) => {
 };
 
 const BUDGET_PLANNING_PAGE = () => {
-  const { data: budgets, isFetching, error } = useUserBudgets();
+  const { data: budgets, isLoading, error } = useUserBudgets();
   const formatCurrency = (amount: number | string) => {
     return Number(amount).toLocaleString();
   };
 
-  if (isFetching) {
+  if (isLoading) {
     return (
       <main className="space-y-8 p-6">
         <H2 className="font-bold text-3xl">Budget Planning</H2>

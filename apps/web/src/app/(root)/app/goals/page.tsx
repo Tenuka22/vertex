@@ -119,9 +119,9 @@ const ErrorState = () => (
 );
 
 const GOALS_PAGE = () => {
-  const { data: goals, isFetching, error } = useUserGoals();
+  const { data: goals, isLoading, error } = useUserGoals();
 
-  if (isFetching) {
+  if (isLoading) {
     return (
       <main className="relative space-y-8 p-6">
         <div className="flex items-center justify-between">

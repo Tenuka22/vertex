@@ -420,20 +420,20 @@ const Timeline = ({ data }: { data: PartialLocationData }) => {
 const LOCATIONS_PAGE = () => {
   const {
     data: businessProfile,
-    isFetching: isFetchingProfile,
+    isLoading: isLoadingProfile,
     error: profileError,
   } = useUserBusinessProfile();
 
   const {
     data: businessLocations,
-    isFetching: isFetchingLocations,
+    isLoading: isLoadingLocations,
     error: locationsError,
   } = useUserBusinessLocations();
 
-  const isFetching = isFetchingProfile || isFetchingLocations;
+  const isLoading = isLoadingProfile || isLoadingLocations;
   const hasError = profileError || locationsError;
 
-  if (isFetching) {
+  if (isLoading) {
     return (
       <main className="space-y-8 p-6">
         <Card className="shadow-md">

@@ -102,9 +102,9 @@ const ErrorState = () => (
 );
 
 const InvoicesPage = () => {
-  const { data: invoices, isFetching, error } = useUserInvoices();
+  const { data: invoices, isLoading, error } = useUserInvoices();
 
-  if (isFetching) {
+  if (isLoading) {
     return (
       <main className="relative space-y-8 p-6">
         <div className="flex items-center justify-between">
@@ -181,7 +181,7 @@ const InvoicesPage = () => {
     );
   }
 
-  if (isFetching) {
+  if (isLoading) {
     return (
       <main className="relative space-y-8 p-6">
         <div className="flex items-center justify-between">

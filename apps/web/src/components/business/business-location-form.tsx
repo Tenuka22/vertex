@@ -7,7 +7,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import type { z } from 'zod';
-import { orpc } from '@/utils/orpc';
+import { useUpdateCreateUserBusinessLocation } from '@/hooks/business';
 import { Loader } from '../global/loader';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardHeader } from '../ui/card';
@@ -270,7 +270,8 @@ export const BusinessLocationForm = <TDefaultData extends { id: string }>({
   defaultData: TDefaultData;
 }) => {
   const [currentStep, setCurrentStep] = useState(FIRST_STEP);
-
+  const { mutate: updateCreateLocation } =
+    useUpdateCreateUserBusinessLocation();
   const form = useForm({
     defaultValues: {
       businessProfileId: '',
@@ -293,7 +294,7 @@ export const BusinessLocationForm = <TDefaultData extends { id: string }>({
     validators: { onSubmit: BusinessLocationInsert },
     onSubmit: async ({ value }) => {
       try {
-        await orpc.businessLocation.createUpdate.call({
+        await updateCreateLocation({
           locationData: value,
         });
         toast.success('Location saved!');

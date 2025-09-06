@@ -7,10 +7,10 @@ import { Loader } from '../global/loader';
 import { Button } from '../ui/button';
 
 export const OAuthLoginButton = () => {
-  const [isFetching, setisFetching] = useState(false);
+  const [isLoading, setisLoading] = useState(false);
 
   const loginWithGoogle = async () => {
-    setisFetching(true);
+    setisLoading(true);
     await authClient.signIn.social(
       {
         provider: 'google',
@@ -25,7 +25,7 @@ export const OAuthLoginButton = () => {
           );
         },
         onSettled: () => {
-          setisFetching(false);
+          setisLoading(false);
         },
       }
     );
@@ -34,12 +34,12 @@ export const OAuthLoginButton = () => {
   return (
     <Button
       className="w-full"
-      disabled={isFetching}
+      disabled={isLoading}
       onClick={loginWithGoogle}
       type="button"
       variant="outline"
     >
-      {isFetching ? (
+      {isLoading ? (
         <div className="flex flex-row items-center gap-2">
           <Loader /> Signing in...
         </div>

@@ -243,11 +243,6 @@ export const AppSidebar = ({
           icon: Building2,
           items: [
             {
-              title: 'Company Profile',
-              url: '/app/settings/company',
-              disabled: true,
-            },
-            {
               title: 'Business Information',
               url: '/app/settings/business',
             },

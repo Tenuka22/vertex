@@ -226,10 +226,10 @@ const CASH_FLOW_PAGE = () => {
 
     error,
     refetch,
-    isFetching,
+    isLoading,
   } = useUserCashFlows();
 
-  if (isFetching) {
+  if (isLoading) {
     return (
       <main className="space-y-8 p-6">
         <div className="flex items-center justify-between">

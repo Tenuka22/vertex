@@ -42,7 +42,7 @@ type PurchaseOrder = {
 };
 
 const ORDERS_PAGE = () => {
-  const { data: orders, isFetching, error } = useUserPurchaseOrders();
+  const { data: orders, isLoading, error } = useUserPurchaseOrders();
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -66,7 +66,7 @@ const ORDERS_PAGE = () => {
     }
   };
 
-  if (isFetching) {
+  if (isLoading) {
     return (
       <main className="relative space-y-8 p-6">
         <div className="flex items-center justify-between">

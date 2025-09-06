@@ -1,11 +1,20 @@
 import { useQuery } from '@tanstack/react-query';
-import { orpc } from '@/utils/orpc';
+import { client } from '@/utils/orpc';
 
 export const useUserInventory = () =>
-  useQuery(orpc.inventory.get.queryOptions({}));
+  useQuery({
+    queryFn: async () => await client.inventory.get(),
+    queryKey: ['user', 'inventory'],
+  });
 
 export const useUserSuppliers = () =>
-  useQuery(orpc.supplier.get.queryOptions({}));
+  useQuery({
+    queryFn: async () => await client.supplier.get(),
+    queryKey: ['user', 'suppliers'],
+  });
 
 export const useUserPurchaseOrders = () =>
-  useQuery(orpc.purchaseOrder.get.queryOptions({}));
+  useQuery({
+    queryFn: async () => await client.purchaseOrder.get(),
+    queryKey: ['user', 'purchaseOrders'],
+  });

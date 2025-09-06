@@ -1,11 +1,38 @@
-import { useQuery } from '@tanstack/react-query';
-import { orpc } from '@/utils/orpc';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { client } from '@/utils/orpc';
 
 export const useUserBusinessInformation = () =>
-  useQuery(orpc.businessInformation.get.queryOptions({}));
+  useQuery({
+    queryFn: async () => await client.businessLocation.get(),
+    queryKey: ['user', 'businessInformation'],
+  });
 
 export const useUserBusinessProfile = () =>
-  useQuery(orpc.businessProfile.get.queryOptions({}));
+  useQuery({
+    queryFn: async () => await client.businessProfile.get(),
+    queryKey: ['user', 'businessProfile'],
+  });
 
 export const useUserBusinessLocations = () =>
-  useQuery(orpc.businessLocation.get.queryOptions());
+  useQuery({
+    queryFn: async () => await client.businessLocation.get(),
+    queryKey: ['user', 'businessLocations'],
+  });
+
+export const useUpdateCreateUserBusinessInformation = () =>
+  useMutation({
+    mutationFn: client.businessInformation.createUpdate,
+    mutationKey: ['user', 'businessInformation', 'update'],
+  });
+
+export const useUpdateCreateUserBusinessLocation = () =>
+  useMutation({
+    mutationFn: client.businessLocation.createUpdate,
+    mutationKey: ['user', 'businessLocation', 'update'],
+  });
+
+export const useUpdateCreateUserBusinessProfile = () =>
+  useMutation({
+    mutationFn: client.businessProfile.createUpdate,
+    mutationKey: ['user', 'businessProfile', 'update'],
+  });

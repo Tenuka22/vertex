@@ -16,7 +16,7 @@ type StepItemContextValue = {
   step: number;
   state: StepState;
   isDisabled: boolean;
-  isFetching: boolean;
+  isLoading: boolean;
 };
 
 type StepState = 'active' | 'completed' | 'inactive' | 'loading';
@@ -122,11 +122,11 @@ function StepperItem({
         ? 'active'
         : 'inactive';
 
-  const isFetching = loading && step === activeStep;
+  const isLoading = loading && step === activeStep;
 
   return (
     <StepItemContext.Provider
-      value={{ step, state, isDisabled: disabled, isFetching }}
+      value={{ step, state, isDisabled: disabled, isLoading }}
     >
       <div
         className={cn(
@@ -135,7 +135,7 @@ function StepperItem({
         )}
         data-slot="stepper-item"
         data-state={state}
-        {...(isFetching ? { 'data-loading': true } : {})}
+        {...(isLoading ? { 'data-loading': true } : {})}
         {...props}
       >
         {children}
@@ -195,7 +195,7 @@ function StepperIndicator({
   children,
   ...props
 }: StepperIndicatorProps) {
-  const { state, step, isFetching } = useStepItem();
+  const { state, step, isLoading } = useStepItem();
 
   return (
     <span
@@ -219,7 +219,7 @@ function StepperIndicator({
             className="absolute scale-0 opacity-0 transition-all group-data-[state=completed]/step:scale-100 group-data-[state=completed]/step:opacity-100"
             size={16}
           />
-          {isFetching && (
+          {isLoading && (
             <span className="absolute transition-all">
               <LoaderCircleIcon
                 aria-hidden="true"

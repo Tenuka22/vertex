@@ -1,5 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
-import { orpc } from '@/utils/orpc';
+import { client } from '@/utils/orpc';
 
 export const useUserTransactions = () =>
-  useQuery(orpc.transaction.get.queryOptions({}));
+  useQuery({
+    queryFn: async () => await client.transaction.get(),
+    queryKey: ['user', 'transactions'],
+  });

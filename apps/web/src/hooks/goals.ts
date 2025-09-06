@@ -1,4 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
-import { orpc } from '@/utils/orpc';
+import { client } from '@/utils/orpc';
 
-export const useUserGoals = () => useQuery(orpc.goal.get.queryOptions({}));
+export const useUserGoals = () =>
+  useQuery({
+    queryFn: async () => await client.goal.get(),
+    queryKey: ['user', 'goals'],
+  });

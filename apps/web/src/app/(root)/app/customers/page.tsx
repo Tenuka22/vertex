@@ -70,9 +70,9 @@ const getStatusBadge = (isActive: boolean, isPrimary: boolean) => {
 };
 
 const CustomersPage = () => {
-  const { data: contacts, isFetching, error } = useUserBusinessContacts();
+  const { data: contacts, isLoading, error } = useUserBusinessContacts();
 
-  if (isFetching) {
+  if (isLoading) {
     return (
       <main className="space-y-8 p-6">
         <H2 className="font-bold text-3xl">Customers</H2>

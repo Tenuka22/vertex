@@ -7,7 +7,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import type { z } from 'zod';
-import { orpc } from '@/utils/orpc';
+import { useUpdateCreateUserBusinessProfile } from '@/hooks/business';
 import { Loader } from '../global/loader';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardHeader } from '../ui/card';
@@ -458,7 +458,8 @@ export const BusinessProfileForm = <TDefaultData extends { id: string }>({
   defaultData?: TDefaultData;
 }) => {
   const [currentStep, setCurrentStep] = useState(FIRST_STEP);
-
+  const { mutate: updateCreateBusinessProfile, data } =
+    useUpdateCreateUserBusinessProfile();
   const form = useForm({
     defaultValues: {
       companyName: '',
@@ -483,10 +484,10 @@ export const BusinessProfileForm = <TDefaultData extends { id: string }>({
     validators: { onSubmit: businessProfileInsertSchema },
     onSubmit: async ({ value }) => {
       try {
-        const serverReturn = await orpc.businessProfile.createUpdate.call({
+        await updateCreateBusinessProfile({
           businessData: value,
         });
-        toast.success(`${serverReturn.companyName} Business profile created!`);
+        toast.success(`${data?.companyName} Business profile created!`);
       } catch (error) {
         if (error instanceof ORPCError) {
           toast.error(error.message);

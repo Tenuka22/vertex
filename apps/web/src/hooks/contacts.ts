@@ -1,5 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
-import { orpc } from '@/utils/orpc';
+import { client } from '@/utils/orpc';
 
 export const useUserBusinessContacts = () =>
-  useQuery(orpc.businessContact.get.queryOptions({}));
+  useQuery({
+    queryFn: async () => await client.businessContact.get(),
+    queryKey: ['user', 'businessContacts'],
+  });

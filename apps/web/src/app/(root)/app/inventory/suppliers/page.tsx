@@ -94,9 +94,9 @@ const getStatusBadge = (status: string) => {
 };
 
 const SUPPLIERS_PAGE = () => {
-  const { data: suppliers, isFetching, error } = useUserSuppliers();
+  const { data: suppliers, isLoading, error } = useUserSuppliers();
 
-  if (isFetching) {
+  if (isLoading) {
     return (
       <main className="relative space-y-8 p-6">
         <div className="flex items-center justify-between">

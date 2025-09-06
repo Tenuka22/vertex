@@ -129,13 +129,13 @@ const getTypeColor = (type: string) => {
 const BALANCE_SHEET_PAGE = () => {
   const {
     data: balanceSheetItems,
-    isFetching,
+    isLoading,
     error,
   } = useUserBalanceSheetItems();
 
   const displayItems = balanceSheetItems || [];
 
-  if (isFetching) {
+  if (isLoading) {
     return (
       <main className="relative space-y-8 p-6">
         <div className="flex items-center justify-between">

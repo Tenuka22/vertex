@@ -61,7 +61,7 @@ const EmptyStateCard = () => (
 );
 
 const PAYMENT_METHODS_PAGE = () => {
-  const { data: paymentMethods, isFetching, error } = useUserPaymentMethods();
+  const { data: paymentMethods, isLoading, error } = useUserPaymentMethods();
 
   const getStatusBadge = (isActive: boolean) => ({
     color: isActive
@@ -93,7 +93,7 @@ const PAYMENT_METHODS_PAGE = () => {
     });
   };
 
-  if (isFetching) {
+  if (isLoading) {
     return (
       <main className="space-y-8 p-6">
         <H2 className="font-bold text-3xl">Payment Methods</H2>

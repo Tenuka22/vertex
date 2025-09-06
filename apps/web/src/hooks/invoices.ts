@@ -1,5 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
-import { orpc } from '@/utils/orpc';
+import { client } from '@/utils/orpc';
 
 export const useUserInvoices = () =>
-  useQuery(orpc.invoice.get.queryOptions({}));
+  useQuery({
+    queryFn: async () => await client.invoice.get(),
+    queryKey: ['user', 'invoices'],
+  });

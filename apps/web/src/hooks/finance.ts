@@ -1,10 +1,20 @@
 import { useQuery } from '@tanstack/react-query';
-import { orpc } from '@/utils/orpc';
+import { client } from '@/utils/orpc';
 
-export const useUserBudgets = () => useQuery(orpc.budget.get.queryOptions({}));
+export const useUserBudgets = () =>
+  useQuery({
+    queryFn: async () => await client.budget.get(),
+    queryKey: ['user', 'budgets'],
+  });
 
 export const useUserCashFlows = () =>
-  useQuery(orpc.cashFlow.get.queryOptions({}));
+  useQuery({
+    queryFn: async () => await client.cashFlow.get(),
+    queryKey: ['user', 'cashFlows'],
+  });
 
 export const useUserBalanceSheetItems = () =>
-  useQuery(orpc.balanceSheet.get.queryOptions({}));
+  useQuery({
+    queryFn: async () => await client.balanceSheet.get(),
+    queryKey: ['user', 'balanceSheetItems'],
+  });
