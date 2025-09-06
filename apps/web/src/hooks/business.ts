@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { client } from '@/utils/orpc';
 
 export const useUserBusinessInformation = () =>
@@ -18,6 +18,19 @@ export const useUserBusinessLocations = () =>
     queryFn: async () => await client.businessLocation.get(),
     queryKey: ['user', 'businessLocations'],
   });
+
+export const useUserBusinessLocationDelete = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (params: { id: string }) =>
+      await client.businessLocation.delete(params),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['user', 'businessLocations'],
+      });
+    },
+  });
+};
 
 export const useUpdateCreateUserBusinessInformation = () =>
   useMutation({

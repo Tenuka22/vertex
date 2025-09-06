@@ -1,408 +1,420 @@
 'use client';
 
-import type { CashFlow } from '@repo/db/schema/primary';
 import {
-  AlertCircle,
+  Activity,
+  BarChart3,
   Calendar,
-  ChevronDown,
+  DollarSign,
   Filter,
-  Loader2,
   Plus,
   TrendingDown,
   TrendingUp,
 } from 'lucide-react';
-import { H2, Muted, P } from '@/components/design/typography';
+import { useRouter } from 'next/navigation';
+import { H2, P } from '@/components/design/typography';
+import EntityPageWrapper from '@/components/global/entity-page-wrapper';
+import CustomTable from '@/components/global/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Separator } from '@/components/ui/separator';
-import { useUserCashFlows } from '@/hooks/finance';
+import { Card, CardContent } from '@/components/ui/card';
+import { useUserCashFlowDelete, useUserCashFlows } from '@/hooks/finance';
+import { getColumns } from './columns';
 
-const LoadingSkeleton = ({ className = '' }: { className?: string }) => (
-  <div className={`animate-pulse rounded bg-muted ${className}`} />
-);
+// Constants
+const ICON_SIZE_CLASS = 'h-8 w-8';
+const ICON_SIZE_SMALL_CLASS = 'h-4 w-4';
+const PERCENTAGE_MULTIPLIER = 100;
+const MIN_TRANSACTIONS = 1;
 
-const LoadingCard = ({ title }: { title: string }) => (
-  <Card className="shadow-md">
-    <CardHeader>
-      <CardTitle className="flex items-center gap-2">
-        <Loader2 className="h-5 w-5 animate-spin" />
-        {title}
-      </CardTitle>
-    </CardHeader>
-    <CardContent className="space-y-4">
-      <LoadingSkeleton className="h-4 w-3/4" />
-      <LoadingSkeleton className="h-4 w-1/2" />
-      <LoadingSkeleton className="h-4 w-2/3" />
-    </CardContent>
-  </Card>
-);
-
-const EmptyStateCard = () => (
-  <Card className="shadow-md">
-    <CardHeader>
-      <CardTitle className="flex items-center gap-2">
-        <AlertCircle className="h-5 w-5" /> No Cash Flow Entries
-      </CardTitle>
-    </CardHeader>
-    <CardContent className="py-8 text-center">
-      <AlertCircle className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
-      <p className="text-muted-foreground">
-        You haven't recorded any cash flow entries yet. Click "Add Entry" to get
-        started.
-      </p>
-    </CardContent>
-  </Card>
-);
-
-const ErrorCard = ({
-  error,
-  onRetry,
-}: {
-  error: Error;
-  onRetry?: () => void;
-}) => (
-  <Card className="border-destructive shadow-md">
-    <CardHeader>
-      <CardTitle className="flex items-center gap-2 text-destructive">
-        <AlertCircle className="h-5 w-5" />
-        Error Loading Cash Flow Data
-      </CardTitle>
-      <CardDescription>
-        {error?.message ||
-          'An unexpected error occurred while loading your cash flow information.'}
-      </CardDescription>
-    </CardHeader>
-    {onRetry && (
-      <CardContent>
-        <Button className="gap-2" onClick={onRetry} variant="outline">
-          <Loader2 className="h-4 w-4" />
-          Try Again
-        </Button>
-      </CardContent>
-    )}
-  </Card>
-);
-
-const getTypeBadge = (direction: string) => {
-  switch (direction) {
-    case 'INCOMING':
-      return { color: 'bg-green-100 text-green-800', text: 'Income' };
-    case 'OUTGOING':
-      return { color: 'bg-red-100 text-red-800', text: 'Expense' };
-    default:
-      return { color: 'bg-gray-100 text-gray-800', text: 'Unknown' };
-  }
+// Types
+type CashFlowApiData = {
+  id: string;
+  businessProfileId: string;
+  transactionId: string;
+  direction: 'INCOMING' | 'OUTGOING';
+  amount: string;
+  flowDate: Date;
+  createdAt: Date;
+  updatedAt: Date;
 };
 
-const formatDate = (date?: string | Date) => {
-  if (!date) {
-    return 'N/A';
-  }
-  try {
-    const d = typeof date === 'string' ? new Date(date) : date;
-    if (Number.isNaN(d.getTime())) {
-      return 'Invalid Date';
-    }
-    return d.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    });
-  } catch {
-    return 'Invalid Date';
-  }
+type CashFlowEntry = CashFlowApiData & {
+  type: 'PAYMENT' | 'PAYOUT';
+  transactionDate: string | Date;
 };
 
-const CashFlowCard = ({ cashFlow }: { cashFlow: CashFlow }) => {
-  const typeInfo = getTypeBadge(cashFlow.direction);
+type Stats = {
+  totalIncome: number;
+  totalExpenses: number;
+  netFlow: number;
+  thisMonthIncome: number;
+  thisMonthExpenses: number;
+  avgIncome: number;
+  avgExpense: number;
+  totalTransactions: number;
+  incomeTransactions: number;
+  expenseTransactions: number;
+  thisMonthTransactions: number;
+};
 
-  const formatCurrency = (amount: number | string) => {
-    try {
-      const num = Number(amount);
-      if (Number.isNaN(num)) {
-        return '0';
-      }
-      return num.toLocaleString('en-US', {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      });
-    } catch {
-      return '0';
-    }
+type StatsCardProps = {
+  title: string;
+  value: string;
+  subtitle?: string;
+  icon: React.ComponentType<{ className?: string }>;
+  color?: 'green' | 'red' | 'blue' | 'default';
+  badge?: string;
+};
+
+// Utility functions
+const mapApiDataToCashFlowEntry = (
+  data: CashFlowApiData[]
+): CashFlowEntry[] => {
+  return data.map((item) => ({
+    ...item,
+    type:
+      item.direction === 'INCOMING'
+        ? ('PAYMENT' as const)
+        : ('PAYOUT' as const),
+    transactionDate: item.flowDate,
+  }));
+};
+
+const calculateStats = (cashFlows: CashFlowEntry[]): Stats => {
+  const currentMonth = new Date().getMonth();
+  const currentYear = new Date().getFullYear();
+
+  const totalIncome = cashFlows
+    .filter((cf) => cf.type === 'PAYMENT')
+    .reduce((sum, cf) => sum + Number(cf.amount || 0), 0);
+
+  const totalExpenses = cashFlows
+    .filter((cf) => cf.type === 'PAYOUT')
+    .reduce((sum, cf) => sum + Number(cf.amount || 0), 0);
+
+  const netFlow = totalIncome - totalExpenses;
+
+  const thisMonthTransactions = cashFlows.filter((cf) => {
+    const transactionDate = new Date(cf.transactionDate);
+    return (
+      transactionDate.getMonth() === currentMonth &&
+      transactionDate.getFullYear() === currentYear
+    );
+  });
+
+  const thisMonthIncome = thisMonthTransactions
+    .filter((cf) => cf.type === 'PAYMENT')
+    .reduce((sum, cf) => sum + Number(cf.amount || 0), 0);
+
+  const thisMonthExpenses = thisMonthTransactions
+    .filter((cf) => cf.type === 'PAYOUT')
+    .reduce((sum, cf) => sum + Number(cf.amount || 0), 0);
+
+  const incomeTransactions = cashFlows.filter(
+    (cf) => cf.type === 'PAYMENT'
+  ).length;
+  const expenseTransactions = cashFlows.filter(
+    (cf) => cf.type === 'PAYOUT'
+  ).length;
+
+  const avgIncome =
+    totalIncome / Math.max(MIN_TRANSACTIONS, incomeTransactions);
+  const avgExpense =
+    totalExpenses / Math.max(MIN_TRANSACTIONS, expenseTransactions);
+
+  const totalTransactions = cashFlows.length;
+
+  return {
+    totalIncome,
+    totalExpenses,
+    netFlow,
+    thisMonthIncome,
+    thisMonthExpenses,
+    avgIncome,
+    avgExpense,
+    totalTransactions,
+    incomeTransactions,
+    expenseTransactions,
+    thisMonthTransactions: thisMonthTransactions.length,
+  };
+};
+
+const getNetFlowColor = (netFlow: number): 'green' | 'red' => {
+  return netFlow >= 0 ? 'green' : 'red';
+};
+
+const getThisMonthColor = (
+  thisMonthIncome: number,
+  thisMonthExpenses: number
+): 'green' | 'red' => {
+  return thisMonthIncome - thisMonthExpenses >= 0 ? 'green' : 'red';
+};
+
+const formatCurrency = (amount: number): string => {
+  return amount.toLocaleString('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+};
+
+const StatsCard = ({
+  title,
+  value,
+  subtitle,
+  icon: Icon,
+  color = 'default',
+  badge,
+}: StatsCardProps) => {
+  const colorClasses = {
+    green: 'text-emerald-600',
+    red: 'text-red-600',
+    blue: 'text-blue-600',
+    default: 'text-foreground',
+  };
+
+  const iconColorClasses = {
+    green: 'text-emerald-500',
+    red: 'text-red-500',
+    blue: 'text-blue-500',
+    default: 'text-muted-foreground',
   };
 
   return (
-    <Card
-      className="flex cursor-pointer flex-col border shadow-md transition-all hover:shadow-lg"
-      key={cashFlow.id}
-    >
-      <CardHeader className="pb-3">
+    <Card className="border shadow-sm transition-all duration-200 hover:border-primary/20 hover:shadow-md">
+      <CardContent className="p-6">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div
-              className={`rounded-lg p-2 ${
-                cashFlow.direction === 'INCOMING'
-                  ? 'bg-green-500'
-                  : 'bg-red-500'
-              }`}
+          <div className="flex-1 space-y-2">
+            <div className="flex items-center gap-2">
+              <p className="font-medium text-muted-foreground text-sm leading-none">
+                {title}
+              </p>
+              {badge && (
+                <Badge className="px-2 py-0.5 text-xs" variant="outline">
+                  {badge}
+                </Badge>
+              )}
+            </div>
+            <p
+              className={`font-bold text-2xl leading-none tracking-tight ${colorClasses[color]}`}
             >
-              {cashFlow.direction === 'INCOMING' ? (
-                <TrendingUp className="h-5 w-5 text-white" />
-              ) : (
-                <TrendingDown className="h-5 w-5 text-white" />
-              )}
-            </div>
-            <div>
-              <CardTitle className="text-lg">
-                {cashFlow.direction === 'INCOMING' ? 'Income' : 'Expense'}
-              </CardTitle>
-              {cashFlow.transactionId && (
-                <Muted className="text-sm">
-                  Transaction ID: {cashFlow.transactionId}
-                </Muted>
-              )}
-            </div>
+              {value}
+            </p>
+            {subtitle && (
+              <p className="text-muted-foreground text-xs leading-none">
+                {subtitle}
+              </p>
+            )}
           </div>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button size="icon" variant="ghost">
-                <ChevronDown className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem>View Details</DropdownMenuItem>
-              <DropdownMenuItem>Edit</DropdownMenuItem>
-              <DropdownMenuItem className="text-destructive">
-                Delete
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-
-        <div className="flex items-center justify-between pt-1">
-          <Badge className={typeInfo.color}>{typeInfo.text}</Badge>
-          <Muted className="text-sm">{formatDate(cashFlow.flowDate)}</Muted>
-        </div>
-      </CardHeader>
-
-      <CardContent className="flex-1 space-y-3">
-        <div className="flex items-center gap-2 text-muted-foreground text-sm">
-          <Calendar className="h-4 w-4" />
-          {formatDate(cashFlow.flowDate)}
-        </div>
-        <div className="flex items-center justify-between font-semibold text-lg">
-          <span
-            className={
-              cashFlow.direction === 'INCOMING'
-                ? 'text-green-600'
-                : 'text-red-600'
-            }
-          >
-            {cashFlow.direction === 'INCOMING' ? '+' : '-'}$
-            {formatCurrency(cashFlow.amount)}
-          </span>
+          <div className="flex-shrink-0">
+            <Icon className={`${ICON_SIZE_CLASS} ${iconColorClasses[color]}`} />
+          </div>
         </div>
       </CardContent>
     </Card>
   );
 };
 
-const CASH_FLOW_PAGE = () => {
-  const {
-    data: cashFlows = [],
+const CashFlowStats = ({ stats }: { stats: Stats }) => (
+  <div className="space-y-6">
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <StatsCard
+        badge="All Time"
+        color="green"
+        icon={TrendingUp}
+        subtitle={`${stats.incomeTransactions.toLocaleString()} incoming transactions`}
+        title="Total Revenue"
+        value={`$${formatCurrency(stats.totalIncome)}`}
+      />
+      <StatsCard
+        badge="All Time"
+        color="red"
+        icon={TrendingDown}
+        subtitle={`${stats.expenseTransactions.toLocaleString()} outgoing transactions`}
+        title="Total Expenses"
+        value={`$${formatCurrency(stats.totalExpenses)}`}
+      />
+      <StatsCard
+        color={getNetFlowColor(stats.netFlow)}
+        icon={Activity}
+        subtitle={`${stats.totalTransactions.toLocaleString()} total transactions processed`}
+        title="Net Cash Flow"
+        value={`${stats.netFlow >= 0 ? '+' : ''}$${formatCurrency(Math.abs(stats.netFlow))}`}
+      />
+      <StatsCard
+        badge="Current Month"
+        color={getThisMonthColor(
+          stats.thisMonthIncome,
+          stats.thisMonthExpenses
+        )}
+        icon={Calendar}
+        subtitle={`${stats.thisMonthTransactions.toLocaleString()} transactions this month`}
+        title="Monthly Performance"
+        value={`$${formatCurrency(Math.abs(stats.thisMonthIncome - stats.thisMonthExpenses))}`}
+      />
+    </div>
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+      <StatsCard
+        color="blue"
+        icon={DollarSign}
+        subtitle="average per incoming transaction"
+        title="Avg Revenue Per Transaction"
+        value={`$${formatCurrency(stats.avgIncome)}`}
+      />
+      <StatsCard
+        color="blue"
+        icon={DollarSign}
+        subtitle="average per outgoing transaction"
+        title="Avg Expense Per Transaction"
+        value={`$${formatCurrency(stats.avgExpense)}`}
+      />
+      <StatsCard
+        color="default"
+        icon={BarChart3}
+        subtitle="percentage of transactions that are incoming"
+        title="Revenue Transaction Ratio"
+        value={`${Math.round((stats.incomeTransactions / Math.max(MIN_TRANSACTIONS, stats.totalTransactions)) * PERCENTAGE_MULTIPLIER)}%`}
+      />
+    </div>
+  </div>
+);
 
-    error,
-    refetch,
-    isLoading,
-  } = useUserCashFlows();
+const CashFlowTable = ({
+  cashFlows,
+  deleteCashFlow,
+}: {
+  cashFlows: CashFlowEntry[];
+  deleteCashFlow: (params: { id: string }) => void;
+}) => (
+  <div className="space-y-4">
+    <div className="flex items-center justify-between">
+      <div className="space-y-1">
+        <H2 className="font-semibold text-xl">Complete Transaction History</H2>
+        <p className="text-muted-foreground text-sm">
+          Track and manage all your cash flow transactions in one place
+        </p>
+      </div>
+      <Badge className="font-medium" variant="secondary">
+        {cashFlows.length.toLocaleString()}{' '}
+        {cashFlows.length === 1 ? 'transaction' : 'transactions'}
+      </Badge>
+    </div>
+    <div className="rounded-lg border bg-card shadow-sm">
+      <CustomTable
+        columns={getColumns({
+          deleteRecord: async ({ ids }) =>
+            Promise.all(ids.map(async (id) => deleteCashFlow({ id }))),
+        })}
+        data={cashFlows}
+        entityNamePlural="Cash Flow Transactions"
+        getRowIdAction={(v) => v.id}
+      />
+    </div>
+  </div>
+);
 
-  if (isLoading) {
-    return (
-      <main className="space-y-8 p-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <LoadingSkeleton className="mb-2 h-9 w-48" />
-            <LoadingSkeleton className="h-5 w-64" />
-          </div>
-          <div className="flex gap-2">
-            <LoadingSkeleton className="h-10 w-20" />
-            <LoadingSkeleton className="h-10 w-28" />
-          </div>
+const CashFlowEmptyState = ({ onAddEntry }: { onAddEntry: () => void }) => (
+  <Card className="border-2 border-dashed shadow-sm transition-all duration-200 hover:border-primary/50 hover:shadow-md">
+    <CardContent className="py-16 text-center">
+      <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full border border-primary/10 bg-gradient-to-br from-primary/10 to-primary/5">
+        <BarChart3 className="h-10 w-10 text-primary" />
+      </div>
+      <H2 className="mb-3 font-semibold text-xl">
+        Start Tracking Your Cash Flow
+      </H2>
+      <P className="mx-auto mb-8 max-w-lg text-muted-foreground leading-relaxed">
+        Get complete visibility into your financial health by recording your
+        first transaction. Monitor incoming revenue, track expenses, and analyze
+        trends to make better business decisions.
+      </P>
+      <Button className="gap-2 px-6" onClick={onAddEntry} size="lg">
+        <Plus className={ICON_SIZE_SMALL_CLASS} />
+        Record Your First Transaction
+      </Button>
+    </CardContent>
+  </Card>
+);
+
+const CashFlowQuickActions = ({ onAddEntry }: { onAddEntry: () => void }) => (
+  <Card className="border-dashed transition-all duration-200 hover:border-primary/20 hover:shadow-sm">
+    <CardContent className="p-6">
+      <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
+        <div className="text-center md:text-left">
+          <H2 className="mb-2 font-semibold text-xl">Quick Actions</H2>
+          <P className="text-muted-foreground">
+            Efficiently manage your cash flow records and generate insights
+          </P>
         </div>
-
-        <Separator />
-
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {Array.from({ length: 6 }, () => crypto.randomUUID()).map((i) => (
-            <LoadingCard key={i} title="Loading Cash Flow Entry..." />
-          ))}
-        </div>
-      </main>
-    );
-  }
-
-  if (error) {
-    return (
-      <main className="space-y-8 p-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <H2 className="font-bold text-3xl">Cash Flow</H2>
-            <Muted>Track incoming and outgoing cash over time.</Muted>
-          </div>
-          <div className="flex gap-2">
-            <Button className="gap-2" disabled variant="outline">
-              <Filter className="h-4 w-4" /> Filter
-            </Button>
-            <Button className="gap-2" disabled>
-              <Plus className="h-4 w-4" /> Add Entry
-            </Button>
-          </div>
-        </div>
-
-        <Separator />
-
-        <ErrorCard error={error} onRetry={refetch} />
-      </main>
-    );
-  }
-
-  return (
-    <main className="relative space-y-8 p-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <H2 className="font-bold text-3xl">Cash Flow</H2>
-          <Muted>Track incoming and outgoing cash over time.</Muted>
-        </div>
-        <div className="flex gap-2">
+        <div className="flex gap-3">
           <Button className="gap-2" variant="outline">
-            <Filter className="h-4 w-4" /> Filter
+            <BarChart3 className={ICON_SIZE_SMALL_CLASS} />
+            View Analytics
           </Button>
-          <Button className="gap-2">
-            <Plus className="h-4 w-4" /> Add Entry
+          <Button className="gap-2" onClick={onAddEntry}>
+            <Plus className={ICON_SIZE_SMALL_CLASS} />
+            Add Transaction
           </Button>
         </div>
       </div>
+    </CardContent>
+  </Card>
+);
 
-      <Separator />
+// Main component
+const CASH_FLOW_PAGE = () => {
+  const {
+    data: apiData = [],
+    error,
+    refetch,
+    isLoading,
+    isFetching,
+  } = useUserCashFlows();
+  const { mutate: deleteCashFlow } = useUserCashFlowDelete();
+  const router = useRouter();
 
-      {!cashFlows || cashFlows.length === 0 ? (
-        <EmptyStateCard />
-      ) : (
-        <>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-            <Card className="shadow-md">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-muted-foreground text-sm">
-                      Total Income
-                    </p>
-                    <p className="font-bold text-2xl text-green-600">
-                      $
-                      {cashFlows
-                        .filter((cf) => cf.direction === 'INCOMING')
-                        .reduce((sum, cf) => sum + Number(cf.amount || 0), 0)
-                        .toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                    </p>
-                  </div>
-                  <TrendingUp className="h-8 w-8 text-green-500" />
-                </div>
-              </CardContent>
-            </Card>
+  const cashFlows = mapApiDataToCashFlowEntry(apiData);
+  const stats = cashFlows.length > 0 ? calculateStats(cashFlows) : null;
 
-            <Card className="shadow-md">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-muted-foreground text-sm">
-                      Total Expenses
-                    </p>
-                    <p className="font-bold text-2xl text-red-600">
-                      $
-                      {cashFlows
-                        .filter((cf) => cf.direction === 'OUTGOING')
-                        .reduce((sum, cf) => sum + Number(cf.amount || 0), 0)
-                        .toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                    </p>
-                  </div>
-                  <TrendingDown className="h-8 w-8 text-red-500" />
-                </div>
-              </CardContent>
-            </Card>
+  const handleAddEntry = () => router.push('/app/finance/cash-flow/create');
 
-            <Card className="shadow-md">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-muted-foreground text-sm">
-                      Net Cash Flow
-                    </p>
-                    {(() => {
-                      const income = cashFlows
-                        .filter((cf) => cf.direction === 'INCOMING')
-                        .reduce((sum, cf) => sum + Number(cf.amount || 0), 0);
-                      const expenses = cashFlows
-                        .filter((cf) => cf.direction === 'OUTGOING')
-                        .reduce((sum, cf) => sum + Number(cf.amount || 0), 0);
-                      const net = income - expenses;
-                      return (
-                        <p
-                          className={`font-bold text-2xl ${net >= 0 ? 'text-green-600' : 'text-red-600'}`}
-                        >
-                          {net >= 0 ? '+' : ''}$
-                          {net.toLocaleString('en-US', {
-                            minimumFractionDigits: 2,
-                          })}
-                        </p>
-                      );
-                    })()}
-                  </div>
-                  <Calendar className="h-8 w-8 text-muted-foreground" />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+  const additionalActions = (
+    <Button className="gap-2" variant="outline">
+      <Filter className={ICON_SIZE_SMALL_CLASS} />
+      Advanced Filters
+    </Button>
+  );
 
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {cashFlows.map((cashFlow) => (
-              <CashFlowCard
-                cashFlow={cashFlow}
-                key={cashFlow.id || Math.random()}
-              />
-            ))}
-          </div>
-        </>
-      )}
+  const renderStats = stats ? () => <CashFlowStats stats={stats} /> : undefined;
 
-      <Card className="border-dashed">
-        <CardContent className="p-6">
-          <div className="flex flex-col items-center justify-center space-y-4 text-center">
-            <div className="w-fit">
-              <H2 className="font-semibold text-xl">Add New Cash Flow Entry</H2>
-              <P className="text-muted-foreground">
-                Record a new income or expense to update your cash flow.
-              </P>
-            </div>
-            <Button className="gap-2">
-              <Plus className="h-4 w-4" /> Add Entry
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    </main>
+  const renderTable = () => (
+    <CashFlowTable cashFlows={cashFlows} deleteCashFlow={deleteCashFlow} />
+  );
+
+  const renderEmptyState = () => (
+    <CashFlowEmptyState onAddEntry={handleAddEntry} />
+  );
+
+  const renderQuickActions = () => (
+    <CashFlowQuickActions onAddEntry={handleAddEntry} />
+  );
+
+  return (
+    <EntityPageWrapper
+      additionalActions={additionalActions}
+      data={cashFlows}
+      description="Monitor your financial health by tracking all incoming revenue and outgoing expenses over time."
+      entityNamePlural="Cash Flow Transactions"
+      entityNameSingular="Transaction"
+      error={error}
+      isFetching={isFetching}
+      isLoading={isLoading}
+      onAddEntry={handleAddEntry}
+      onRefetch={refetch}
+      renderEmptyState={renderEmptyState}
+      renderQuickActions={renderQuickActions}
+      renderStats={renderStats}
+      renderTable={renderTable}
+      title="Cash Flow Management"
+    />
   );
 };
 

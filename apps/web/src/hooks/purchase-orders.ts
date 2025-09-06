@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { client } from '@/utils/orpc';
 
 export const useUserPurchaseOrders = () =>
@@ -6,3 +6,16 @@ export const useUserPurchaseOrders = () =>
     queryFn: async () => await client.purchaseOrder.get(),
     queryKey: ['user', 'purchaseOrders'],
   });
+
+export const useUserPurchaseOrderDelete = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (params: { id: string }) =>
+      await client.purchaseOrder.delete(params),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['user', 'purchaseOrders'],
+      });
+    },
+  });
+};

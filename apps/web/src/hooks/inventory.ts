@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { client } from '@/utils/orpc';
 
 export const useUserInventory = () =>
@@ -7,11 +7,37 @@ export const useUserInventory = () =>
     queryKey: ['user', 'inventory'],
   });
 
+export const useUserInventoryDelete = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (params: { id: string }) =>
+      await client.inventory.delete(params),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['user', 'inventory'],
+      });
+    },
+  });
+};
+
 export const useUserSuppliers = () =>
   useQuery({
     queryFn: async () => await client.supplier.get(),
     queryKey: ['user', 'suppliers'],
   });
+
+export const useUserSupplierDelete = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (params: { id: string }) =>
+      await client.supplier.delete(params),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['user', 'suppliers'],
+      });
+    },
+  });
+};
 
 export const useUserPurchaseOrders = () =>
   useQuery({

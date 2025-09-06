@@ -1,320 +1,368 @@
 'use client';
 
 import {
-  AlertCircle,
-  ChevronDown,
+  Activity,
+  BarChart3,
   DollarSign,
   Filter,
-  Loader2,
   Plus,
   Target,
+  TrendingDown,
 } from 'lucide-react';
-import { H2, Muted, P } from '@/components/design/typography';
+import { useRouter } from 'next/navigation';
+import { H2, P } from '@/components/design/typography';
+import EntityPageWrapper from '@/components/global/entity-page-wrapper';
+import CustomTable from '@/components/global/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Separator } from '@/components/ui/separator';
-import { useUserGoals } from '@/hooks/goals';
-import { cn } from '@/lib/utils';
+import { Card, CardContent } from '@/components/ui/card';
+import { useUserGoalDelete, useUserGoals } from '@/hooks/goals';
+import { getColumns } from './columns';
 
-const formatDate = (dateString: string | Date) => {
-  const date =
-    typeof dateString === 'string' ? new Date(dateString) : dateString;
-  return date.toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
+const ICON_SIZE_CLASS = 'h-8 w-8';
+const ICON_SIZE_SMALL_CLASS = 'h-4 w-4';
+const PERCENTAGE_MULTIPLIER = 100;
+const MIN_GOALS = 1;
+
+type GoalApiData = {
+  id: string;
+  businessProfileId: string;
+  title: string;
+  category: string;
+  targetAmount: string;
+  currentAmount: string;
+  deadline: Date;
+  status: string;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+type GoalEntry = GoalApiData;
+
+type GoalStats = {
+  totalGoals: number;
+  activeGoals: number;
+  completedGoals: number;
+  overdueGoals: number;
+  totalTargetAmount: number;
+  totalCurrentAmount: number;
+  avgProgress: number;
+  activeRatio: number;
+  completedRatio: number;
+};
+
+type StatsCardProps = {
+  title: string;
+  value: string;
+  subtitle?: string;
+  icon: React.ComponentType<{ className?: string }>;
+  color?: 'green' | 'red' | 'blue' | 'default';
+  badge?: string;
+};
+
+const mapApiDataToGoalEntry = (data: GoalApiData[]): GoalEntry[] => {
+  return data.map((item) => ({
+    ...item,
+  }));
+};
+
+const calculateGoalStats = (goals: GoalEntry[]): GoalStats => {
+  const totalGoals = goals.length;
+  const activeGoals = goals.filter((g) => g.status === 'active').length;
+  const completedGoals = goals.filter((g) => g.status === 'completed').length;
+  const overdueGoals = goals.filter((g) => g.status === 'overdue').length;
+
+  const totalTargetAmount = goals.reduce(
+    (sum, g) => sum + Number(g.targetAmount || 0),
+    0
+  );
+  const totalCurrentAmount = goals.reduce(
+    (sum, g) => sum + Number(g.currentAmount || 0),
+    0
+  );
+
+  const totalProgress = goals.reduce((sum, g) => {
+    const current = Number.parseFloat(g.currentAmount);
+    const target = Number.parseFloat(g.targetAmount);
+    return sum + (target > 0 ? (current / target) * PERCENTAGE_MULTIPLIER : 0);
+  }, 0);
+  const avgProgress = totalProgress / Math.max(MIN_GOALS, totalGoals);
+
+  const activeRatio =
+    (activeGoals / Math.max(MIN_GOALS, totalGoals)) * PERCENTAGE_MULTIPLIER;
+  const completedRatio =
+    (completedGoals / Math.max(MIN_GOALS, totalGoals)) * PERCENTAGE_MULTIPLIER;
+
+  return {
+    totalGoals,
+    activeGoals,
+    completedGoals,
+    overdueGoals,
+    totalTargetAmount,
+    totalCurrentAmount,
+    avgProgress,
+    activeRatio,
+    completedRatio,
+  };
+};
+
+const formatCurrency = (amount: number): string => {
+  return amount.toLocaleString('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
   });
 };
 
-const getStatusBadge = (status: string) => {
-  switch (status) {
-    case 'active':
-      return { color: 'bg-green-100 text-green-800', text: 'Active' };
-    case 'completed':
-      return { color: 'bg-blue-100 text-blue-800', text: 'Completed' };
-    default:
-      return { color: 'bg-gray-100 text-gray-800', text: 'Inactive' };
-  }
+const StatsCard = ({
+  title,
+  value,
+  subtitle,
+  icon: Icon,
+  color = 'default',
+  badge,
+}: StatsCardProps) => {
+  const colorClasses = {
+    green: 'text-emerald-600',
+    red: 'text-red-600',
+    blue: 'text-blue-600',
+    default: 'text-foreground',
+  };
+
+  const iconColorClasses = {
+    green: 'text-emerald-500',
+    red: 'text-red-500',
+    blue: 'text-blue-500',
+    default: 'text-muted-foreground',
+  };
+
+  return (
+    <Card className="border shadow-sm transition-all duration-200 hover:border-primary/20 hover:shadow-md">
+      <CardContent className="p-6">
+        <div className="flex items-center justify-between">
+          <div className="flex-1 space-y-2">
+            <div className="flex items-center gap-2">
+              <p className="font-medium text-muted-foreground text-sm leading-none">
+                {title}
+              </p>
+              {badge && (
+                <Badge className="px-2 py-0.5 text-xs" variant="outline">
+                  {badge}
+                </Badge>
+              )}
+            </div>
+            <p
+              className={`font-bold text-2xl leading-none tracking-tight ${colorClasses[color]}`}
+            >
+              {value}
+            </p>
+            {subtitle && (
+              <p className="text-muted-foreground text-xs leading-none">
+                {subtitle}
+              </p>
+            )}
+          </div>
+          <div className="flex-shrink-0">
+            <Icon className={`${ICON_SIZE_CLASS} ${iconColorClasses[color]}`} />
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
 };
 
-const MAX_PROGRESS = 100;
-
-const getProgress = (goal: {
-  currentAmount: string | number;
-  targetAmount: string | number;
-}) => {
-  const current =
-    typeof goal.currentAmount === 'string'
-      ? Number.parseFloat(goal.currentAmount)
-      : goal.currentAmount;
-  const target =
-    typeof goal.targetAmount === 'string'
-      ? Number.parseFloat(goal.targetAmount)
-      : goal.targetAmount;
-  return Math.min((current / target) * MAX_PROGRESS, MAX_PROGRESS);
-};
-
-const LoadingSkeleton = ({ className = '' }: { className?: string }) => (
-  <div className={`animate-pulse rounded bg-muted ${className}`} />
+const GoalStats = ({ stats }: { stats: GoalStats }) => (
+  <div className="space-y-6">
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <StatsCard
+        badge="All Time"
+        color="blue"
+        icon={Target}
+        subtitle="Total financial goals set"
+        title="Total Goals"
+        value={stats.totalGoals.toLocaleString()}
+      />
+      <StatsCard
+        badge="All Time"
+        color="green"
+        icon={Activity}
+        subtitle="Goals currently active"
+        title="Active Goals"
+        value={stats.activeGoals.toLocaleString()}
+      />
+      <StatsCard
+        badge="All Time"
+        color="red"
+        icon={TrendingDown}
+        subtitle="Goals past their deadline"
+        title="Overdue Goals"
+        value={stats.overdueGoals.toLocaleString()}
+      />
+      <StatsCard
+        badge="All Time"
+        color="default"
+        icon={DollarSign}
+        subtitle="Total target amount across all goals"
+        title="Total Target"
+        value={`$${formatCurrency(stats.totalTargetAmount)}`}
+      />
+    </div>
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+      <StatsCard
+        color="blue"
+        icon={DollarSign}
+        subtitle="total amount saved towards goals"
+        title="Total Saved"
+        value={`$${formatCurrency(stats.totalCurrentAmount)}`}
+      />
+      <StatsCard
+        color="default"
+        icon={BarChart3}
+        subtitle="average progress across all goals"
+        title="Avg Progress"
+        value={`${stats.avgProgress.toFixed(0)}%`}
+      />
+      <StatsCard
+        color="default"
+        icon={BarChart3}
+        subtitle="percentage of goals completed"
+        title="Completed Goal Ratio"
+        value={`${stats.completedRatio.toFixed(0)}%`}
+      />
+    </div>
+  </div>
 );
 
-const LoadingCard = () => (
-  <Card className="shadow-md">
-    <CardHeader>
-      <CardTitle className="flex items-center gap-2">
-        <Loader2 className="h-5 w-5 animate-spin" />
-        Loading Goal...
-      </CardTitle>
-    </CardHeader>
-    <CardContent className="space-y-4">
-      <LoadingSkeleton className="h-4 w-3/4" />
-      <LoadingSkeleton className="h-4 w-1/2" />
-      <LoadingSkeleton className="h-4 w-2/3" />
+const GoalTable = ({
+  goals,
+  deleteGoal,
+}: {
+  goals: GoalEntry[];
+  deleteGoal: (params: { id: string }) => void;
+}) => (
+  <div className="space-y-4">
+    <div className="flex items-center justify-between">
+      <div className="space-y-1">
+        <H2 className="font-semibold text-xl">Complete Goal List</H2>
+        <p className="text-muted-foreground text-sm">
+          View and manage all your financial goals in one place
+        </p>
+      </div>
+      <Badge className="font-medium" variant="secondary">
+        {goals.length.toLocaleString()} {goals.length === 1 ? 'goal' : 'goals'}
+      </Badge>
+    </div>
+    <div className="rounded-lg border bg-card shadow-sm">
+      <CustomTable
+        columns={getColumns({
+          deleteRecord: async ({ ids }) =>
+            Promise.all(ids.map(async (id) => deleteGoal({ id }))),
+        })}
+        data={goals}
+        entityNamePlural="Goals"
+        getRowIdAction={(v) => v.id}
+      />
+    </div>
+  </div>
+);
+
+const GoalEmptyState = ({ onAddEntry }: { onAddEntry: () => void }) => (
+  <Card className="border-2 border-dashed shadow-sm transition-all duration-200 hover:border-primary/50 hover:shadow-md">
+    <CardContent className="py-16 text-center">
+      <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full border border-primary/10 bg-gradient-to-br from-primary/10 to-primary/5">
+        <Target className="h-10 w-10 text-primary" />
+      </div>
+      <H2 className="mb-3 font-semibold text-xl">
+        Start Setting Your Financial Goals
+      </H2>
+      <P className="mx-auto mb-8 max-w-lg text-muted-foreground leading-relaxed">
+        Get complete visibility into your financial aspirations by adding your
+        first goal. Monitor progress, track deadlines, and analyze achievements
+        to make better financial decisions.
+      </P>
+      <Button className="gap-2 px-6" onClick={onAddEntry} size="lg">
+        <Plus className={ICON_SIZE_SMALL_CLASS} />
+        Set Your First Goal
+      </Button>
     </CardContent>
   </Card>
 );
 
-const EmptyStateCard = () => (
-  <Card className="shadow-md">
-    <CardHeader>
-      <CardTitle className="flex items-center gap-2">
-        <AlertCircle className="h-5 w-5" /> No Goals
-      </CardTitle>
-    </CardHeader>
-    <CardContent className="py-8 text-center">
-      <AlertCircle className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
-      <p className="text-muted-foreground">
-        You haven't created any financial goals yet. Click "Add Goal" to get
-        started.
-      </p>
-    </CardContent>
-  </Card>
-);
-
-const ErrorState = () => (
-  <Card className="border-destructive">
+const GoalQuickActions = ({ onAddEntry }: { onAddEntry: () => void }) => (
+  <Card className="border-dashed transition-all duration-200 hover:border-primary/20 hover:shadow-sm">
     <CardContent className="p-6">
-      <div className="flex flex-col items-center justify-center space-y-4 text-center">
-        <AlertCircle className="h-12 w-12 text-destructive" />
-        <div className="w-fit">
-          <H2 className="font-semibold text-xl">Error Loading Data</H2>
-          <P>
-            There was an error loading your financial goals. Please try
-            refreshing the page.
+      <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
+        <div className="text-center md:text-left">
+          <H2 className="mb-2 font-semibold text-xl">Quick Actions</H2>
+          <P className="text-muted-foreground">
+            Efficiently manage your goal records and generate insights
           </P>
         </div>
-        <Button onClick={() => window.location.reload()} variant="outline">
-          Refresh Page
-        </Button>
+        <div className="flex gap-3">
+          <Button className="gap-2" variant="outline">
+            <BarChart3 className={ICON_SIZE_SMALL_CLASS} />
+            View Analytics
+          </Button>
+          <Button className="gap-2" onClick={onAddEntry}>
+            <Plus className={ICON_SIZE_SMALL_CLASS} />
+            Add Goal
+          </Button>
+        </div>
       </div>
     </CardContent>
   </Card>
 );
 
 const GOALS_PAGE = () => {
-  const { data: goals, isLoading, error } = useUserGoals();
+  const {
+    data: apiData = [],
+    error,
+    refetch,
+    isLoading,
+    isFetching,
+  } = useUserGoals();
+  const { mutate: deleteGoal } = useUserGoalDelete();
+  const router = useRouter();
 
-  if (isLoading) {
-    return (
-      <main className="relative space-y-8 p-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <H2 className="font-bold text-3xl">Financial Goals</H2>
-            <Muted>
-              Track and manage your financial goals, savings, and deadlines.
-            </Muted>
-          </div>
-          <div className="flex gap-2">
-            <Button className="gap-2" disabled variant="outline">
-              <Filter className="h-4 w-4" /> Filter
-            </Button>
-            <Button className="gap-2" disabled>
-              <Plus className="h-4 w-4" /> Add Goal
-            </Button>
-          </div>
-        </div>
+  const goals = mapApiDataToGoalEntry(apiData);
+  const stats = goals.length > 0 ? calculateGoalStats(goals) : null;
 
-        <Separator />
+  const handleAddEntry = () => router.push('/app/goals/create');
 
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {Array.from({ length: 3 }).map(() => (
-            <LoadingCard key={crypto.randomUUID()} />
-          ))}
-        </div>
-      </main>
-    );
-  }
+  const additionalActions = (
+    <Button className="gap-2" variant="outline">
+      <Filter className={ICON_SIZE_SMALL_CLASS} />
+      Advanced Filters
+    </Button>
+  );
 
-  if (error) {
-    return (
-      <main className="relative space-y-8 p-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <H2 className="font-bold text-3xl">Financial Goals</H2>
-            <Muted>
-              Track and manage your financial goals, savings, and deadlines.
-            </Muted>
-          </div>
-        </div>
+  const renderStats = stats ? () => <GoalStats stats={stats} /> : undefined;
 
-        <Separator />
+  const renderTable = () => <GoalTable deleteGoal={deleteGoal} goals={goals} />;
 
-        <ErrorState />
-      </main>
-    );
-  }
+  const renderEmptyState = () => <GoalEmptyState onAddEntry={handleAddEntry} />;
 
-  if (!goals || goals.length === 0) {
-    return (
-      <main className="relative space-y-8 p-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <H2 className="font-bold text-3xl">Financial Goals</H2>
-            <Muted>
-              Track and manage your financial goals, savings, and deadlines.
-            </Muted>
-          </div>
-          <div className="flex gap-2">
-            <Button className="gap-2" variant="outline">
-              <Filter className="h-4 w-4" /> Filter
-            </Button>
-            <Button className="gap-2">
-              <Plus className="h-4 w-4" /> Add Goal
-            </Button>
-          </div>
-        </div>
-
-        <Separator />
-
-        <EmptyStateCard />
-      </main>
-    );
-  }
+  const renderQuickActions = () => (
+    <GoalQuickActions onAddEntry={handleAddEntry} />
+  );
 
   return (
-    <main className="relative space-y-8 p-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <H2 className="font-bold text-3xl">Financial Goals</H2>
-          <Muted>
-            Track and manage your financial goals, savings, and deadlines.
-          </Muted>
-        </div>
-        <div className="flex gap-2">
-          <Button className="gap-2" variant="outline">
-            <Filter className="h-4 w-4" /> Filter
-          </Button>
-          <Button className="gap-2">
-            <Plus className="h-4 w-4" /> Add Goal
-          </Button>
-        </div>
-      </div>
-
-      <Separator />
-
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {goals.map((goal) => {
-          const progress = getProgress(goal);
-          const statusInfo = getStatusBadge(goal.status);
-
-          return (
-            <Card
-              className="flex cursor-pointer flex-col border shadow-md transition-all hover:shadow-lg"
-              key={goal.id}
-            >
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="rounded-lg bg-blue-500 p-2">
-                      <Target className="h-5 w-5 text-white" />
-                    </div>
-                    <div>
-                      <CardTitle className="text-lg">{goal.title}</CardTitle>
-                      <Muted className="text-sm">{goal.category}</Muted>
-                    </div>
-                  </div>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button size="icon" variant="ghost">
-                        <ChevronDown className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem>View Goal</DropdownMenuItem>
-                      <DropdownMenuItem>Edit Goal</DropdownMenuItem>
-                      <DropdownMenuItem>Mark as Complete</DropdownMenuItem>
-                      <DropdownMenuItem className="text-destructive">
-                        Delete Goal
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-
-                <div className="flex items-center justify-between pt-1">
-                  <Badge className={statusInfo.color}>{statusInfo.text}</Badge>
-                  <Muted className="text-sm">
-                    Deadline: {formatDate(goal.deadline)}
-                  </Muted>
-                </div>
-              </CardHeader>
-
-              <CardContent className="flex-1 space-y-3">
-                <div className="flex justify-between text-sm">
-                  <div className="flex items-center gap-1">
-                    <DollarSign className="h-3 w-3" />
-                    <span>
-                      $
-                      {typeof goal.currentAmount === 'string'
-                        ? Number.parseFloat(goal.currentAmount)
-                        : goal.currentAmount}
-                    </span>
-                  </div>
-                  <span>
-                    of $
-                    {typeof goal.targetAmount === 'string'
-                      ? Number.parseFloat(goal.targetAmount)
-                      : goal.targetAmount}
-                  </span>
-                </div>
-                <div className="h-2 w-full rounded-full bg-muted">
-                  <div
-                    className={cn(
-                      'h-full rounded-full bg-blue-500 transition-all',
-                      progress === MAX_PROGRESS && 'bg-green-500'
-                    )}
-                    style={{ width: `${progress}%` }}
-                  />
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
-
-      <Card className="border-dashed">
-        <CardContent className="p-6">
-          <div className="flex flex-col items-center justify-center space-y-4 text-center">
-            <div className="w-fit">
-              <H2 className="font-semibold text-xl">Set a New Goal</H2>
-              <P>
-                Create financial goals to stay on top of your savings and
-                spending targets.
-              </P>
-            </div>
-            <Button className="gap-2">
-              <Plus className="h-4 w-4" /> Create Goal
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    </main>
+    <EntityPageWrapper
+      additionalActions={additionalActions}
+      data={goals}
+      description="Track and manage your financial goals, savings, and deadlines."
+      entityNamePlural="Goals"
+      entityNameSingular="Goal"
+      error={error}
+      isFetching={isFetching}
+      isLoading={isLoading}
+      onAddEntry={handleAddEntry}
+      onRefetch={refetch}
+      renderEmptyState={renderEmptyState}
+      renderQuickActions={renderQuickActions}
+      renderStats={renderStats}
+      renderTable={renderTable}
+      title="Financial Goals Management"
+    />
   );
 };
 

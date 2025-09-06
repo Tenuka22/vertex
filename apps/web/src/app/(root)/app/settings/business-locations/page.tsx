@@ -1,558 +1,356 @@
 'use client';
 
-import type { BusinessLocation } from '@repo/db/schema/primary';
 import {
-  AlertCircle,
+  Activity,
+  BarChart3,
   Building2,
-  Calendar,
-  Globe,
-  Loader2,
-  type LucideIcon,
-  Mail,
+  Filter,
   MapPin,
-  Phone,
   Plus,
 } from 'lucide-react';
-import Link from 'next/link';
-import { BusinessLocationForm } from '@/components/business/business-location-form';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { useRouter } from 'next/navigation';
+import { H2, P } from '@/components/design/typography';
+import EntityPageWrapper from '@/components/global/entity-page-wrapper';
+import CustomTable from '@/components/global/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import {
-  Card,
-  CardAction,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
-import {
+  useUserBusinessLocationDelete,
   useUserBusinessLocations,
-  useUserBusinessProfile,
 } from '@/hooks/business';
+import { getColumns } from './columns';
 
-type PartialLocationData = Partial<BusinessLocation>;
+const ICON_SIZE_CLASS = 'h-8 w-8';
+const ICON_SIZE_SMALL_CLASS = 'h-4 w-4';
+const PERCENTAGE_MULTIPLIER = 100;
+const MIN_LOCATIONS = 1;
 
-const LoadingSkeleton = ({ className = '' }: { className?: string }) => (
-  <div className={`animate-pulse rounded bg-muted ${className}`} />
-);
+type BusinessLocationApiData = {
+  id: string;
+  businessProfileId: string;
+  locationName: string;
+  locationType: string | null;
+  addressLine1: string;
+  addressLine2: string | null;
+  city: string;
+  state: string | null;
+  postalCode: string | null;
+  country: string;
+  phone: string | null;
+  email: string | null;
+  latitude: string | null;
+  longitude: string | null;
+  isHeadquarters: boolean | null;
+  isActive: boolean | null;
+  createdAt: Date;
+  updatedAt: Date;
+};
 
-const LoadingCard = ({ title }: { title: string }) => (
-  <Card className="shadow-md">
-    <CardHeader>
-      <CardTitle className="flex items-center gap-2">
-        <Loader2 className="h-5 w-5 animate-spin" />
-        {title}
-      </CardTitle>
-    </CardHeader>
-    <CardContent className="space-y-4">
-      <LoadingSkeleton className="h-4 w-3/4" />
-      <LoadingSkeleton className="h-4 w-1/2" />
-      <LoadingSkeleton className="h-4 w-2/3" />
-    </CardContent>
-  </Card>
-);
+type BusinessLocationEntry = BusinessLocationApiData & {
+  isHeadquarters: boolean;
+};
 
-const EmptyStateCard = ({
-  title,
-  description,
-  icon: Icon,
-  actionLabel,
-  onAction,
-}: {
+type BusinessLocationStats = {
+  totalLocations: number;
+  activeLocations: number;
+  headquartersCount: number;
+  activeRatio: number;
+  headquartersRatio: number;
+};
+
+type StatsCardProps = {
   title: string;
-  description: string;
-  icon: LucideIcon;
-  actionLabel?: string;
-  onAction?: () => void;
-}) => (
-  <Card className="shadow-md">
-    <CardHeader>
-      <CardTitle className="flex items-center gap-2">
-        <Icon className="h-5 w-5" />
-        {title}
-      </CardTitle>
-    </CardHeader>
-    <CardContent className="py-8 text-center">
-      <AlertCircle className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
-      <p className="mb-4 text-muted-foreground">{description}</p>
-      {actionLabel && onAction && (
-        <Button onClick={onAction} variant="outline">
-          <Plus className="mr-2 h-4 w-4" />
-          {actionLabel}
-        </Button>
-      )}
-    </CardContent>
-  </Card>
-);
+  value: string;
+  subtitle?: string;
+  icon: React.ComponentType<{ className?: string }>;
+  color?: 'green' | 'red' | 'blue' | 'default';
+  badge?: string;
+};
 
-const LocationHeader = ({ data }: { data: PartialLocationData }) => {
-  if (!data.locationName) {
-    return (
-      <Card className="shadow-md">
-        <CardHeader className="flex items-center gap-4">
-          <Avatar className="h-16 w-16 shadow-md">
-            <AvatarFallback>
-              <Building2 className="h-8 w-8" />
-            </AvatarFallback>
-          </Avatar>
-          <div className="flex flex-col gap-2">
-            <CardTitle className="text-lg text-muted-foreground">
-              No Location Information
-            </CardTitle>
-            <CardDescription>
-              Please add location details to get started.
-            </CardDescription>
-            <CardAction className="mt-1 flex gap-2">
-              <Badge variant="outline">Setup Required</Badge>
-            </CardAction>
-          </div>
-        </CardHeader>
-      </Card>
-    );
-  }
+const mapApiDataToBusinessLocationEntry = (
+  data: BusinessLocationApiData[]
+): BusinessLocationEntry[] => {
+  return data.map((item) => ({
+    ...item,
+    isHeadquarters: item.isHeadquarters ?? false,
+    isActive: item.isActive ?? true,
+  }));
+};
+
+const calculateBusinessLocationStats = (
+  locations: BusinessLocationEntry[]
+): BusinessLocationStats => {
+  const totalLocations = locations.length;
+  const activeLocations = locations.filter((l) => l.isActive).length;
+  const headquartersCount = locations.filter((l) => l.isHeadquarters).length;
+
+  const activeRatio =
+    (activeLocations / Math.max(MIN_LOCATIONS, totalLocations)) *
+    PERCENTAGE_MULTIPLIER;
+  const headquartersRatio =
+    (headquartersCount / Math.max(MIN_LOCATIONS, totalLocations)) *
+    PERCENTAGE_MULTIPLIER;
+
+  return {
+    totalLocations,
+    activeLocations,
+    headquartersCount,
+    activeRatio,
+    headquartersRatio,
+  };
+};
+
+const StatsCard = ({
+  title,
+  value,
+  subtitle,
+  icon: Icon,
+  color = 'default',
+  badge,
+}: StatsCardProps) => {
+  const colorClasses = {
+    green: 'text-emerald-600',
+    red: 'text-red-600',
+    blue: 'text-blue-600',
+    default: 'text-foreground',
+  };
+
+  const iconColorClasses = {
+    green: 'text-emerald-500',
+    red: 'text-red-500',
+    blue: 'text-blue-500',
+    default: 'text-muted-foreground',
+  };
 
   return (
-    <Card className="shadow-md">
-      <CardHeader className="flex items-center gap-4">
-        <Avatar className="h-16 w-16 shadow-md">
-          <AvatarFallback className="font-bold text-lg">
-            {data.locationName?.substring(0, 2).toUpperCase()}
-          </AvatarFallback>
-        </Avatar>
-        <div className="flex flex-col gap-2">
-          <CardTitle className="text-lg">{data.locationName}</CardTitle>
-          <CardDescription>
-            {data.locationType || 'Business Location'}
-          </CardDescription>
-          <CardAction className="mt-1 flex gap-2">
-            {data.isHeadquarters && (
-              <Badge className="gap-1" variant="secondary">
-                <Building2 className="h-3 w-3" /> Headquarters
-              </Badge>
-            )}
-            <Badge
-              className="gap-1"
-              variant={data.isActive ? 'default' : 'destructive'}
+    <Card className="border shadow-sm transition-all duration-200 hover:border-primary/20 hover:shadow-md">
+      <CardContent className="p-6">
+        <div className="flex items-center justify-between">
+          <div className="flex-1 space-y-2">
+            <div className="flex items-center gap-2">
+              <p className="font-medium text-muted-foreground text-sm leading-none">
+                {title}
+              </p>
+              {badge && (
+                <Badge className="px-2 py-0.5 text-xs" variant="outline">
+                  {badge}
+                </Badge>
+              )}
+            </div>
+            <p
+              className={`font-bold text-2xl leading-none tracking-tight ${colorClasses[color]}`}
             >
-              {data.isActive ? 'Active' : 'Inactive'}
-            </Badge>
-            {data.locationType && (
-              <Badge variant="outline">{data.locationType}</Badge>
+              {value}
+            </p>
+            {subtitle && (
+              <p className="text-muted-foreground text-xs leading-none">
+                {subtitle}
+              </p>
             )}
-          </CardAction>
+          </div>
+          <div className="flex-shrink-0">
+            <Icon className={`${ICON_SIZE_CLASS} ${iconColorClasses[color]}`} />
+          </div>
         </div>
-      </CardHeader>
+      </CardContent>
     </Card>
   );
 };
 
-const InfoRow = ({
-  label,
-  value,
-  icon,
-}: {
-  label: string;
-  value: React.ReactNode;
-  icon?: React.ReactNode;
-}) => (
-  <div className="space-y-1">
-    <Label className="font-medium text-muted-foreground text-sm">{label}</Label>
-    <div className="flex items-center gap-2">
-      {icon}
-      <p className="font-semibold">{value}</p>
+const BusinessLocationStats = ({ stats }: { stats: BusinessLocationStats }) => (
+  <div className="space-y-6">
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <StatsCard
+        badge="All Time"
+        color="blue"
+        icon={Building2}
+        subtitle="Total registered business locations"
+        title="Total Locations"
+        value={stats.totalLocations.toLocaleString()}
+      />
+      <StatsCard
+        badge="All Time"
+        color="green"
+        icon={Activity}
+        subtitle="Locations currently active"
+        title="Active Locations"
+        value={stats.activeLocations.toLocaleString()}
+      />
+      <StatsCard
+        badge="All Time"
+        color="default"
+        icon={MapPin}
+        subtitle="Locations designated as headquarters"
+        title="Headquarters"
+        value={stats.headquartersCount.toLocaleString()}
+      />
+      <StatsCard
+        badge="Ratio"
+        color="default"
+        icon={BarChart3}
+        subtitle="Percentage of locations that are active"
+        title="Active Location Ratio"
+        value={`${stats.activeRatio.toFixed(0)}%`}
+      />
     </div>
   </div>
 );
 
-const LocationOverview = ({ data }: { data: PartialLocationData }) => {
-  if (!data.locationName) {
-    return (
-      <EmptyStateCard
-        description="Add location details to see overview information here."
-        icon={Building2}
-        title="Location Overview"
+const BusinessLocationTable = ({
+  locations,
+  deleteBusinessLocation,
+}: {
+  locations: BusinessLocationEntry[];
+  deleteBusinessLocation: (params: { id: string }) => void;
+}) => (
+  <div className="space-y-4">
+    <div className="flex items-center justify-between">
+      <div className="space-y-1">
+        <H2 className="font-semibold text-xl">
+          Complete Business Location List
+        </H2>
+        <p className="text-muted-foreground text-sm">
+          View and manage all your business locations in one place
+        </p>
+      </div>
+      <Badge className="font-medium" variant="secondary">
+        {locations.length.toLocaleString()}{' '}
+        {locations.length === 1 ? 'location' : 'locations'}
+      </Badge>
+    </div>
+    <div className="rounded-lg border bg-card shadow-sm">
+      <CustomTable
+        columns={getColumns({
+          deleteRecord: async ({ ids }) =>
+            Promise.all(ids.map(async (id) => deleteBusinessLocation({ id }))),
+        })}
+        data={locations}
+        entityNamePlural="Business Locations"
+        getRowIdAction={(v) => v.id}
       />
-    );
-  }
+    </div>
+  </div>
+);
 
-  const hasAddress =
-    data.addressLine1 || data.city || data.state || data.country;
+const BusinessLocationEmptyState = ({
+  onAddEntry,
+}: {
+  onAddEntry: () => void;
+}) => (
+  <Card className="border-2 border-dashed shadow-sm transition-all duration-200 hover:border-primary/50 hover:shadow-md">
+    <CardContent className="py-16 text-center">
+      <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full border border-primary/10 bg-gradient-to-br from-primary/10 to-primary/5">
+        <MapPin className="h-10 w-10 text-primary" />
+      </div>
+      <H2 className="mb-3 font-semibold text-xl">
+        Start Managing Your Business Locations
+      </H2>
+      <P className="mx-auto mb-8 max-w-lg text-muted-foreground leading-relaxed">
+        Get complete visibility into your operational footprint by adding your
+        first business location. Monitor addresses, contact information, and
+        headquarters status to make better business decisions.
+      </P>
+      <Button className="gap-2 px-6" onClick={onAddEntry} size="lg">
+        <Plus className={ICON_SIZE_SMALL_CLASS} />
+        Add Your First Business Location
+      </Button>
+    </CardContent>
+  </Card>
+);
 
-  return (
-    <Card className="shadow-md">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Building2 className="h-5 w-5" /> Location Overview
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        <div className="grid gap-6 sm:grid-cols-2">
-          <InfoRow label="Location Name" value={data.locationName} />
-          {data.locationType && (
-            <InfoRow
-              label="Location Type"
-              value={<Badge variant="outline">{data.locationType}</Badge>}
-            />
-          )}
-          {hasAddress && (
-            <InfoRow
-              icon={<MapPin className="h-4 w-4 text-muted-foreground" />}
-              label="Address"
-              value={
-                [
-                  data.addressLine1,
-                  data.addressLine2,
-                  data.city,
-                  data.state,
-                  data.postalCode,
-                  data.country,
-                ]
-                  .filter(Boolean)
-                  .join(', ') || 'Address not provided'
-              }
-            />
-          )}
-          {data.phone && (
-            <InfoRow
-              icon={<Phone className="h-4 w-4 text-muted-foreground" />}
-              label="Phone"
-              value={data.phone}
-            />
-          )}
-          {data.email && (
-            <InfoRow
-              icon={<Mail className="h-4 w-4 text-muted-foreground" />}
-              label="Email"
-              value={data.email}
-            />
-          )}
-          {data.latitude && data.longitude && (
-            <InfoRow
-              icon={<Globe className="h-4 w-4 text-muted-foreground" />}
-              label="Coordinates"
-              value={`Lat: ${data.latitude}, Lng: ${data.longitude}`}
-            />
-          )}
+const BusinessLocationQuickActions = ({
+  onAddEntry,
+}: {
+  onAddEntry: () => void;
+}) => (
+  <Card className="border-dashed transition-all duration-200 hover:border-primary/20 hover:shadow-sm">
+    <CardContent className="p-6">
+      <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
+        <div className="text-center md:text-left">
+          <H2 className="mb-2 font-semibold text-xl">Quick Actions</H2>
+          <P className="text-muted-foreground">
+            Efficiently manage your business location records and generate
+            insights
+          </P>
         </div>
-      </CardContent>
-    </Card>
-  );
-};
-
-const ContactCard = ({ data }: { data: PartialLocationData }) => {
-  const contactItems = [
-    {
-      label: 'Email',
-      value: data.email,
-      href: data.email ? `mailto:${data.email}` : undefined,
-      icon: <Mail className="h-4 w-4 text-primary" />,
-    },
-    {
-      label: 'Phone',
-      value: data.phone,
-      href: data.phone ? `tel:${data.phone}` : undefined,
-      icon: <Phone className="h-4 w-4 text-primary" />,
-    },
-  ].filter((i) => i.value);
-
-  if (contactItems.length === 0) {
-    return (
-      <EmptyStateCard
-        description="Add contact details to make it easy for customers to reach this location."
-        icon={Mail}
-        title="Contact Information"
-      />
-    );
-  }
-
-  return (
-    <Card className="shadow-md">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Mail className="h-5 w-5" /> Contact Information
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        {contactItems.map((item) => (
-          <div
-            className="flex items-center gap-3 rounded-lg border p-3 transition-colors hover:bg-muted/50"
-            key={item.label}
-          >
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-              {item.icon}
-            </div>
-            <div className="flex-1">
-              <Label className="font-medium text-muted-foreground text-xs uppercase">
-                {item.label}
-              </Label>
-              {item.href ? (
-                <Button
-                  asChild
-                  className="h-auto p-0 font-medium"
-                  variant="link"
-                >
-                  <Link
-                    href={item.href}
-                    rel="noopener noreferrer"
-                    target="_blank"
-                  >
-                    {item.value}
-                  </Link>
-                </Button>
-              ) : (
-                <p className="font-semibold">{item.value}</p>
-              )}
-            </div>
-          </div>
-        ))}
-      </CardContent>
-    </Card>
-  );
-};
-
-const AddressCard = ({ data }: { data: PartialLocationData }) => {
-  const hasAddress =
-    data.addressLine1 || data.city || data.state || data.country;
-
-  if (!hasAddress) {
-    return (
-      <EmptyStateCard
-        description="Add address information to display location details."
-        icon={MapPin}
-        title="Address Information"
-      />
-    );
-  }
-
-  return (
-    <Card className="shadow-md">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <MapPin className="h-5 w-5" /> Address Information
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="rounded-lg border p-4">
-          <div className="space-y-2">
-            {data.addressLine1 && (
-              <p className="font-semibold">{data.addressLine1}</p>
-            )}
-            {data.addressLine2 && (
-              <p className="text-muted-foreground">{data.addressLine2}</p>
-            )}
-            {(data.city || data.state || data.postalCode) && (
-              <p className="text-muted-foreground">
-                {[data.city, data.state, data.postalCode]
-                  .filter(Boolean)
-                  .join(', ')}
-              </p>
-            )}
-            {data.country && <p className="font-medium">{data.country}</p>}
-          </div>
+        <div className="flex gap-3">
+          <Button className="gap-2" variant="outline">
+            <BarChart3 className={ICON_SIZE_SMALL_CLASS} />
+            View Analytics
+          </Button>
+          <Button className="gap-2" onClick={onAddEntry}>
+            <Plus className={ICON_SIZE_SMALL_CLASS} />
+            Add Location
+          </Button>
         </div>
-        {data.latitude && data.longitude && (
-          <>
-            <Separator />
-            <div className="space-y-2">
-              <Label className="font-medium text-muted-foreground text-sm">
-                Coordinates
-              </Label>
-              <div className="flex items-center gap-4">
-                <Badge variant="outline">Lat: {data.latitude}</Badge>
-                <Badge variant="outline">Lng: {data.longitude}</Badge>
-              </div>
-            </div>
-          </>
-        )}
-      </CardContent>
-    </Card>
-  );
-};
-
-const Timeline = ({ data }: { data: PartialLocationData }) => {
-  if (!(data.createdAt || data.updatedAt)) {
-    return (
-      <EmptyStateCard
-        description="Timeline information will appear once location data is saved."
-        icon={Calendar}
-        title="Location Timeline"
-      />
-    );
-  }
-
-  return (
-    <Card className="shadow-md">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Calendar className="h-5 w-5" /> Location Timeline
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {data.createdAt && (
-          <div>
-            <Label className="font-medium text-muted-foreground text-xs uppercase">
-              Created
-            </Label>
-            <p className="font-medium text-sm">
-              {data.createdAt.toLocaleDateString()}
-            </p>
-          </div>
-        )}
-        {data.createdAt && data.updatedAt && <Separator />}
-        {data.updatedAt && (
-          <div>
-            <Label className="font-medium text-muted-foreground text-xs uppercase">
-              Last Updated
-            </Label>
-            <p className="font-medium text-sm">
-              {data.updatedAt.toLocaleDateString()}
-            </p>
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
-};
+      </div>
+    </CardContent>
+  </Card>
+);
 
 const LOCATIONS_PAGE = () => {
   const {
-    data: businessProfile,
-    isLoading: isLoadingProfile,
-    error: profileError,
-  } = useUserBusinessProfile();
-
-  const {
-    data: businessLocations,
-    isLoading: isLoadingLocations,
-    error: locationsError,
+    data: apiData = [],
+    error,
+    refetch,
+    isLoading,
+    isFetching,
   } = useUserBusinessLocations();
+  const { mutate: deleteBusinessLocation } = useUserBusinessLocationDelete();
+  const router = useRouter();
 
-  const isLoading = isLoadingProfile || isLoadingLocations;
-  const hasError = profileError || locationsError;
+  const locations = mapApiDataToBusinessLocationEntry(apiData);
+  const stats =
+    locations.length > 0 ? calculateBusinessLocationStats(locations) : null;
 
-  if (isLoading) {
-    return (
-      <main className="space-y-8 p-6">
-        <Card className="shadow-md">
-          <CardHeader className="flex items-center gap-4">
-            <LoadingSkeleton className="h-16 w-16 rounded-full" />
-            <div className="flex flex-1 flex-col gap-2">
-              <LoadingSkeleton className="h-6 w-48" />
-              <LoadingSkeleton className="h-4 w-64" />
-              <LoadingSkeleton className="h-6 w-32" />
-            </div>
-          </CardHeader>
-        </Card>
-        <div className="grid gap-4 lg:grid-cols-2">
-          <div className="space-y-6">
-            <LoadingCard title="Loading Location Overview..." />
-            <LoadingCard title="Loading Contact Information..." />
-            <LoadingCard title="Loading Address Information..." />
-          </div>
-          <div className="relative h-full">
-            <div className="sticky top-4 space-y-6 pb-4">
-              <LoadingCard title="Location Form" />
-            </div>
-          </div>
-        </div>
-      </main>
-    );
-  }
+  const handleAddEntry = () =>
+    router.push('/app/settings/business-locations/create');
 
-  if (hasError) {
-    return (
-      <main className="space-y-8 p-6">
-        <Card>
-          <CardContent className="flex items-center gap-2 pt-6">
-            <AlertCircle className="h-4 w-4" />
-            <CardDescription>
-              There was an error loading your location information. Please try
-              refreshing the page.
-            </CardDescription>
-          </CardContent>
-        </Card>
-        <div className="grid gap-4 lg:grid-cols-2">
-          <div className="relative h-full">
-            <div className="sticky top-4 space-y-6 pb-4">
-              <BusinessLocationForm
-                defaultData={{
-                  businessProfileId: businessProfile?.id || '',
-                  id: '',
-                }}
-              />
-            </div>
-          </div>
-        </div>
-      </main>
-    );
-  }
+  const additionalActions = (
+    <Button className="gap-2" variant="outline">
+      <Filter className={ICON_SIZE_SMALL_CLASS} />
+      Advanced Filters
+    </Button>
+  );
 
-  if (!businessProfile) {
-    return (
-      <main className="space-y-8 p-6">
-        <EmptyStateCard
-          description="Please complete your business profile first before adding locations."
-          icon={Building2}
-          title="Business Profile Required"
-        />
-      </main>
-    );
-  }
+  const renderStats = stats
+    ? () => <BusinessLocationStats stats={stats} />
+    : undefined;
 
-  if (businessLocations?.length === 0) {
-    return (
-      <main className="space-y-8 p-6">
-        <EmptyStateCard
-          actionLabel="Add First Location"
-          description="Add your first business location to get started with managing multiple locations."
-          icon={MapPin}
-          title="No Locations Found"
-        />
-        <div className="grid gap-4 lg:grid-cols-2">
-          <div className="relative h-full">
-            <div className="sticky top-4 space-y-6 pb-4">
-              <BusinessLocationForm
-                defaultData={{ businessProfileId: businessProfile.id, id: '' }}
-              />
-            </div>
-          </div>
-        </div>
-      </main>
-    );
-  }
+  const renderTable = () => (
+    <BusinessLocationTable
+      deleteBusinessLocation={deleteBusinessLocation}
+      locations={locations}
+    />
+  );
+
+  const renderEmptyState = () => (
+    <BusinessLocationEmptyState onAddEntry={handleAddEntry} />
+  );
+
+  const renderQuickActions = () => (
+    <BusinessLocationQuickActions onAddEntry={handleAddEntry} />
+  );
 
   return (
-    <main className="space-y-8 p-6">
-      {businessLocations?.map((location) => (
-        <div key={location.id}>
-          <div className="grid gap-4 lg:grid-cols-2">
-            <div className="space-y-6">
-              <LocationHeader data={location} />
-              <LocationOverview data={location} />
-              <ContactCard data={location} />
-              <AddressCard data={location} />
-              <Timeline data={location} />
-            </div>
-            <div className="relative h-full">
-              <div className="sticky top-4 space-y-6 pb-4">
-                <BusinessLocationForm
-                  defaultData={{
-                    ...location,
-                    businessProfileId: businessProfile.id,
-                  }}
-                />
-              </div>
-            </div>
-          </div>
-          {businessLocations?.length > 1 &&
-            businessLocations?.indexOf(location) <
-              businessLocations?.length - 1 && <Separator className="my-8" />}
-        </div>
-      ))}
-    </main>
+    <EntityPageWrapper
+      additionalActions={additionalActions}
+      data={locations}
+      description="Monitor your business locations, including addresses, contact information, and headquarters status."
+      entityNamePlural="Business Locations"
+      entityNameSingular="Business Location"
+      error={error}
+      isFetching={isFetching}
+      isLoading={isLoading}
+      onAddEntry={handleAddEntry}
+      onRefetch={refetch}
+      renderEmptyState={renderEmptyState}
+      renderQuickActions={renderQuickActions}
+      renderStats={renderStats}
+      renderTable={renderTable}
+      title="Business Locations Management"
+    />
   );
 };
 

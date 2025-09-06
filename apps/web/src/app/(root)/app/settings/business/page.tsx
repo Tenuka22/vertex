@@ -5,40 +5,35 @@ import type {
 } from '@repo/db/schema/primary';
 import {
   Activity,
-  AlertCircle,
+  BarChart3,
   Book,
   Building2,
   Calendar,
   Clock,
   CreditCard,
   FileText,
+  Filter,
   Globe,
   Linkedin,
-  Loader2,
-  type LucideIcon,
   Mail,
   Palette,
   Phone,
+  Plus,
   Shield,
   Target,
   Twitter,
   Users,
 } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useMemo } from 'react';
 import { BusinessInformationForm } from '@/components/business/business-information-form';
 import { BusinessProfileForm } from '@/components/business/business-profile-form';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { H2, P } from '@/components/design/typography';
+import EntityPageWrapper from '@/components/global/entity-page-wrapper';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardAction,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import {
@@ -46,115 +41,139 @@ import {
   useUserBusinessProfile,
 } from '@/hooks/business';
 
+const ICON_SIZE_CLASS = 'h-8 w-8';
+const ICON_SIZE_SMALL_CLASS = 'h-4 w-4';
+
 type BusinessData = BusinessProfile & BusinessInformation;
 type PartialBusinessData = Partial<BusinessProfile> &
   Partial<BusinessInformation>;
 
-const LoadingSkeleton = ({ className = '' }: { className?: string }) => (
-  <div className={`animate-pulse rounded bg-muted ${className}`} />
-);
+type BusinessStats = {
+  isVerified: boolean;
+  isActive: boolean;
+  employeeCount: number;
+  foundedYear: number | null;
+  businessType: string | null;
+  industry: string | null;
+};
 
-const LoadingCard = ({ title }: { title: string }) => (
-  <Card className="shadow-md">
-    <CardHeader>
-      <CardTitle className="flex items-center gap-2">
-        <Loader2 className="h-5 w-5 animate-spin" />
-        {title}
-      </CardTitle>
-    </CardHeader>
-    <CardContent className="space-y-4">
-      <LoadingSkeleton className="h-4 w-3/4" />
-      <LoadingSkeleton className="h-4 w-1/2" />
-      <LoadingSkeleton className="h-4 w-2/3" />
-    </CardContent>
-  </Card>
-);
-
-const EmptyStateCard = ({
-  title,
-  description,
-  icon: Icon,
-}: {
+type StatsCardProps = {
   title: string;
-  description: string;
-  icon: LucideIcon;
-}) => (
-  <Card className="shadow-md">
-    <CardHeader>
-      <CardTitle className="flex items-center gap-2">
-        <Icon className="h-5 w-5" />
-        {title}
-      </CardTitle>
-    </CardHeader>
-    <CardContent className="py-8 text-center">
-      <AlertCircle className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
-      <p className="text-muted-foreground">{description}</p>
-    </CardContent>
-  </Card>
-);
+  value: string;
+  subtitle?: string;
+  icon: React.ComponentType<{ className?: string }>;
+  color?: 'green' | 'red' | 'blue' | 'default';
+  badge?: string;
+};
 
-const CompanyHeader = ({ data }: { data: PartialBusinessData }) => {
-  if (!data.companyName) {
-    return (
-      <Card className="shadow-md">
-        <CardHeader className="flex items-center gap-4">
-          <Avatar className="h-16 w-16 shadow-md">
-            <AvatarFallback>
-              <Building2 className="h-8 w-8" />
-            </AvatarFallback>
-          </Avatar>
-          <div className="flex flex-col gap-2">
-            <CardTitle className="text-lg text-muted-foreground">
-              No Company Information
-            </CardTitle>
-            <CardDescription>
-              Please complete your business profile to get started.
-            </CardDescription>
-            <CardAction className="mt-1 flex gap-2">
-              <Badge variant="outline">Setup Required</Badge>
-            </CardAction>
-          </div>
-        </CardHeader>
-      </Card>
-    );
-  }
+const calculateBusinessStats = (
+  business: PartialBusinessData
+): BusinessStats => {
+  return {
+    isVerified: business.isVerified ?? false,
+    isActive: business.isActive ?? false,
+    employeeCount: business.employeeCount || 0,
+    foundedYear: business.foundedYear || null,
+    businessType: business.businessType || null,
+    industry: business.industry || null,
+  };
+};
+
+const StatsCard = ({
+  title,
+  value,
+  subtitle,
+  icon: Icon,
+  color = 'default',
+  badge,
+}: StatsCardProps) => {
+  const colorClasses = {
+    green: 'text-emerald-600',
+    red: 'text-red-600',
+    blue: 'text-blue-600',
+    default: 'text-foreground',
+  };
+
+  const iconColorClasses = {
+    green: 'text-emerald-500',
+    red: 'text-red-500',
+    blue: 'text-blue-500',
+    default: 'text-muted-foreground',
+  };
 
   return (
-    <Card className="shadow-md">
-      <CardHeader className="flex items-center gap-4">
-        <Avatar className="h-16 w-16 shadow-md">
-          <AvatarImage alt="Logo" src={data.logoUrl ?? undefined} />
-          <AvatarFallback className="font-bold text-lg">
-            {data.companyName?.substring(0, 2).toUpperCase()}
-          </AvatarFallback>
-        </Avatar>
-        <div className="flex flex-col gap-2">
-          <CardTitle className="text-lg">{data.companyName}</CardTitle>
-          <CardDescription>
-            {data.description || 'No description provided'}
-          </CardDescription>
-          <CardAction className="mt-1 flex gap-2">
-            {data.isVerified && (
-              <Badge className="gap-1" variant="secondary">
-                <Shield className="h-3 w-3" /> Verified
-              </Badge>
-            )}
-            <Badge
-              className="gap-1"
-              variant={data.isActive ? 'default' : 'destructive'}
+    <Card className="border shadow-sm transition-all duration-200 hover:border-primary/20 hover:shadow-md">
+      <CardContent className="p-6">
+        <div className="flex items-center justify-between">
+          <div className="flex-1 space-y-2">
+            <div className="flex items-center gap-2">
+              <p className="font-medium text-muted-foreground text-sm leading-none">
+                {title}
+              </p>
+              {badge && (
+                <Badge className="px-2 py-0.5 text-xs" variant="outline">
+                  {badge}
+                </Badge>
+              )}
+            </div>
+            <p
+              className={`font-bold text-2xl leading-none tracking-tight ${colorClasses[color]}`}
             >
-              <Activity className="h-3 w-3" />
-              {data.isActive ? 'Active' : 'Inactive'}
-            </Badge>
-            {data.tradingName && (
-              <Badge variant="outline">{data.tradingName}</Badge>
+              {value}
+            </p>
+            {subtitle && (
+              <p className="text-muted-foreground text-xs leading-none">
+                {subtitle}
+              </p>
             )}
-          </CardAction>
+          </div>
+          <div className="flex-shrink-0">
+            <Icon className={`${ICON_SIZE_CLASS} ${iconColorClasses[color]}`} />
+          </div>
         </div>
-      </CardHeader>
+      </CardContent>
     </Card>
   );
 };
+
+const BusinessStats = ({ stats }: { stats: BusinessStats }) => (
+  <div className="space-y-6">
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <StatsCard
+        badge="Status"
+        color={stats.isActive ? 'green' : 'red'}
+        icon={Activity}
+        subtitle="Current operational status"
+        title="Business Status"
+        value={stats.isActive ? 'Active' : 'Inactive'}
+      />
+      <StatsCard
+        badge="Status"
+        color={stats.isVerified ? 'blue' : 'red'}
+        icon={Shield}
+        subtitle="Verification status of the business"
+        title="Verification"
+        value={stats.isVerified ? 'Verified' : 'Unverified'}
+      />
+      <StatsCard
+        badge="Details"
+        color="default"
+        icon={Users}
+        subtitle="Total number of employees"
+        title="Employee Count"
+        value={stats.employeeCount.toLocaleString()}
+      />
+      <StatsCard
+        badge="Details"
+        color="default"
+        icon={Calendar}
+        subtitle="Year business was founded"
+        title="Founded Year"
+        value={stats.foundedYear ? String(stats.foundedYear) : 'N/A'}
+      />
+    </div>
+  </div>
+);
 
 const InfoRow = ({
   label,
@@ -176,13 +195,7 @@ const InfoRow = ({
 
 const CompanyOverview = ({ data }: { data: PartialBusinessData }) => {
   if (!data.companyName) {
-    return (
-      <EmptyStateCard
-        description="Complete your business profile to see company information here."
-        icon={Building2}
-        title="Company Overview"
-      />
-    );
+    return null;
   }
 
   return (
@@ -250,13 +263,7 @@ const CompanyOverview = ({ data }: { data: PartialBusinessData }) => {
 
 const MissionVision = ({ data }: { data: PartialBusinessData }) => {
   if (!(data.mission || data.vision)) {
-    return (
-      <EmptyStateCard
-        description="Add your company's mission and vision statements to inspire your team."
-        icon={Target}
-        title="Mission & Vision"
-      />
-    );
+    return null;
   }
 
   return (
@@ -324,13 +331,7 @@ const ContactCard = ({ data }: { data: PartialBusinessData }) => {
   ].filter((i) => i.value);
 
   if (contactItems.length === 0) {
-    return (
-      <EmptyStateCard
-        description="Add your contact details to make it easy for customers to reach you."
-        icon={Mail}
-        title="Contact Information"
-      />
-    );
+    return null;
   }
 
   return (
@@ -380,13 +381,7 @@ const ContactCard = ({ data }: { data: PartialBusinessData }) => {
 
 const BrandSettings = ({ data }: { data: PartialBusinessData }) => {
   if (!data.brandColor) {
-    return (
-      <EmptyStateCard
-        description="Set your brand colors and visual identity to personalize your experience."
-        icon={Palette}
-        title="Brand & Settings"
-      />
-    );
+    return null;
   }
 
   return (
@@ -427,13 +422,7 @@ const AccountSettings = ({ data }: { data: PartialBusinessData }) => {
     data.internalNotes;
 
   if (!hasSettings) {
-    return (
-      <EmptyStateCard
-        description="Configure your financial and operational settings for better business management."
-        icon={CreditCard}
-        title="Financial & Settings"
-      />
-    );
+    return null;
   }
 
   return (
@@ -508,13 +497,7 @@ const AccountSettings = ({ data }: { data: PartialBusinessData }) => {
 
 const Timeline = ({ data }: { data: PartialBusinessData }) => {
   if (!(data.createdAt || data.updatedAt)) {
-    return (
-      <EmptyStateCard
-        description="Timeline information will appear once your business profile is created."
-        icon={Calendar}
-        title="Account Timeline"
-      />
-    );
+    return null;
   }
 
   return (
@@ -530,7 +513,9 @@ const Timeline = ({ data }: { data: PartialBusinessData }) => {
             <Label className="font-medium text-muted-foreground text-xs uppercase">
               Created
             </Label>
-            <p className="font-medium text-sm">{data.createdAt.toString()}</p>
+            <p className="font-medium text-sm">
+              {data.createdAt.toLocaleString()}
+            </p>
           </div>
         )}
         {data.createdAt && data.updatedAt && <Separator />}
@@ -539,13 +524,73 @@ const Timeline = ({ data }: { data: PartialBusinessData }) => {
             <Label className="font-medium text-muted-foreground text-xs uppercase">
               Last Updated
             </Label>
-            <p className="font-medium text-sm">{data.updatedAt.toString()}</p>
+            <p className="font-medium text-sm">
+              {data.updatedAt.toLocaleString()}
+            </p>
           </div>
         )}
       </CardContent>
     </Card>
   );
 };
+
+const BusinessDetails = ({ business }: { business: PartialBusinessData }) => (
+  <div className="space-y-6">
+    <CompanyOverview data={business} />
+    <MissionVision data={business} />
+    <ContactCard data={business} />
+    <BrandSettings data={business} />
+    <AccountSettings data={business} />
+    <Timeline data={business} />
+  </div>
+);
+
+const BusinessEmptyState = ({ onAddEntry }: { onAddEntry: () => void }) => (
+  <Card className="border-2 border-dashed shadow-sm transition-all duration-200 hover:border-primary/50 hover:shadow-md">
+    <CardContent className="py-16 text-center">
+      <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full border border-primary/10 bg-gradient-to-br from-primary/10 to-primary/5">
+        <Building2 className="h-10 w-10 text-primary" />
+      </div>
+      <H2 className="mb-3 font-semibold text-xl">
+        Complete Your Business Profile
+      </H2>
+      <P className="mx-auto mb-8 max-w-lg text-muted-foreground leading-relaxed">
+        Get complete visibility into your business operations by setting up your
+        business profile. Monitor key information, track contacts, and analyze
+        performance to make better business decisions.
+      </P>
+      <Button className="gap-2 px-6" onClick={onAddEntry} size="lg">
+        <Plus className={ICON_SIZE_SMALL_CLASS} />
+        Create Business Profile
+      </Button>
+    </CardContent>
+  </Card>
+);
+
+const BusinessQuickActions = ({ onAddEntry }: { onAddEntry: () => void }) => (
+  <Card className="border-dashed transition-all duration-200 hover:border-primary/20 hover:shadow-sm">
+    <CardContent className="p-6">
+      <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
+        <div className="text-center md:text-left">
+          <H2 className="mb-2 font-semibold text-xl">Quick Actions</H2>
+          <P className="text-muted-foreground">
+            Efficiently manage your business profile and generate insights
+          </P>
+        </div>
+        <div className="flex gap-3">
+          <Button className="gap-2" variant="outline">
+            <BarChart3 className={ICON_SIZE_SMALL_CLASS} />
+            View Analytics
+          </Button>
+          <Button className="gap-2" onClick={onAddEntry}>
+            <Plus className={ICON_SIZE_SMALL_CLASS} />
+            Edit Profile
+          </Button>
+        </div>
+      </div>
+    </CardContent>
+  </Card>
+);
 
 const COMPANY_PAGE = () => {
   const {
@@ -570,82 +615,64 @@ const COMPANY_PAGE = () => {
   const isLoading = isLoadingInfo || isLoadingProfile;
   const hasError = infoError || profileError;
 
-  if (isLoading) {
-    return (
-      <main className="space-y-8 p-6">
-        <Card className="shadow-md">
-          <CardHeader className="flex items-center gap-4">
-            <LoadingSkeleton className="h-16 w-16 rounded-full" />
-            <div className="flex flex-1 flex-col gap-2">
-              <LoadingSkeleton className="h-6 w-48" />
-              <LoadingSkeleton className="h-4 w-64" />
-              <LoadingSkeleton className="h-6 w-32" />
-            </div>
-          </CardHeader>
-        </Card>
-        <div className="grid gap-4 lg:grid-cols-2">
-          <div className="space-y-6">
-            <LoadingCard title="Loading Company Overview..." />
-            <LoadingCard title="Loading Contact Information..." />
-            <LoadingCard title="Loading Account Settings..." />
-          </div>
-          <div className="relative h-full min-h-screen">
-            <div className="sticky top-4 space-y-6 pb-4">
-              <LoadingCard title="Business Profile Form" />
-              <LoadingCard title="Business Information Form" />
-            </div>
-          </div>
-        </div>
-      </main>
-    );
-  }
+  const stats = business.companyName ? calculateBusinessStats(business) : null;
 
-  if (hasError) {
-    return (
-      <main className="space-y-8 p-6">
-        <Card>
-          <AlertCircle className="h-4 w-4" />
-          <CardDescription>
-            There was an error loading your business information. Please try
-            refreshing the page.
-          </CardDescription>
-        </Card>
-        <div className="grid gap-4 lg:grid-cols-2">
-          <div className="relative h-full min-h-screen">
-            <div className="sticky top-4 space-y-6 pb-4">
-              <BusinessProfileForm />
-              <BusinessInformationForm />
-            </div>
-          </div>
-        </div>
-      </main>
-    );
-  }
+  const router = useRouter();
+  const handleAddEntry = () => router.push('/app/settings/business/edit');
 
-  return (
-    <main className="space-y-8 p-6">
-      <CompanyHeader data={business} />
-      <div className="grid gap-4 lg:grid-cols-2">
-        <div className="space-y-6">
-          <CompanyOverview data={business} />
-          <MissionVision data={business} />
-          <ContactCard data={business} />
-          <BrandSettings data={business} />
-          <AccountSettings data={business} />
-          <Timeline data={business} />
-        </div>
-        <div className="relative h-full min-h-screen">
-          <div className="sticky top-4 space-y-6 pb-4">
-            <BusinessProfileForm
-              defaultData={business.id ? (business as BusinessData) : undefined}
-            />
-            <BusinessInformationForm
-              defaultData={business.id ? (business as BusinessData) : undefined}
-            />
-          </div>
+  const additionalActions = (
+    <Button className="gap-2" variant="outline">
+      <Filter className={ICON_SIZE_SMALL_CLASS} />
+      Advanced Filters
+    </Button>
+  );
+
+  const renderStats = stats ? () => <BusinessStats stats={stats} /> : undefined;
+
+  const renderDetails = () => (
+    <div className="grid gap-4 lg:grid-cols-2">
+      <BusinessDetails business={business} />
+      <div className="relative h-full min-h-screen">
+        <div className="sticky top-4 space-y-6 pb-4">
+          <BusinessProfileForm
+            defaultData={business.id ? (business as BusinessData) : undefined}
+          />
+          <BusinessInformationForm
+            defaultData={business.id ? (business as BusinessData) : undefined}
+          />
         </div>
       </div>
-    </main>
+    </div>
+  );
+
+  const renderEmptyState = () => (
+    <BusinessEmptyState onAddEntry={handleAddEntry} />
+  );
+
+  const renderQuickActions = () => (
+    <BusinessQuickActions onAddEntry={handleAddEntry} />
+  );
+
+  return (
+    <EntityPageWrapper
+      additionalActions={additionalActions}
+      data={business.companyName ? [business] : []}
+      description="Manage your business profile, including company information, mission, vision, contact details, and settings."
+      entityNamePlural="Business Profile"
+      entityNameSingular="Business Profile"
+      error={hasError}
+      isFetching={isLoading}
+      isLoading={isLoading}
+      onAddEntry={handleAddEntry}
+      onRefetch={() => {
+        console.log('refetch');
+      }}
+      renderEmptyState={renderEmptyState}
+      renderQuickActions={renderQuickActions}
+      renderStats={renderStats}
+      renderTable={renderDetails}
+      title="Business Profile Management"
+    />
   );
 };
 

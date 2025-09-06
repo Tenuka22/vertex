@@ -1,244 +1,383 @@
 'use client';
 
 import {
-  AlertCircle,
   ArrowDownCircle,
   ArrowUpCircle,
-  ChevronDown,
+  BarChart3,
+  DollarSign,
   Filter,
-  Loader2,
   Plus,
   Receipt,
 } from 'lucide-react';
-import { H2, Muted, P } from '@/components/design/typography';
+import { useRouter } from 'next/navigation';
+import { H2, P } from '@/components/design/typography';
+import EntityPageWrapper from '@/components/global/entity-page-wrapper';
+import CustomTable from '@/components/global/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Separator } from '@/components/ui/separator';
-import { useUserTransactions } from '@/hooks/payments';
+  useUserTransactionDelete,
+  useUserTransactions,
+} from '@/hooks/payments';
+import { getColumns } from './columns';
 
-const LoadingSkeleton = ({ className = '' }: { className?: string }) => (
-  <div className={`animate-pulse rounded bg-muted ${className}`} />
+const ICON_SIZE_CLASS = 'h-8 w-8';
+const ICON_SIZE_SMALL_CLASS = 'h-4 w-4';
+const PERCENTAGE_MULTIPLIER = 100;
+const MIN_TRANSACTIONS = 1;
+
+type TransactionApiData = {
+  id: string;
+  businessProfileId: string;
+  paymentMethodId: string | null;
+  expenseCategoryId: string | null;
+  type: 'PAYMENT' | 'PAYOUT';
+  amount: string;
+  description: string | null;
+  reference: string | null;
+  transactionDate: Date;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+type TransactionEntry = TransactionApiData;
+
+type TransactionStats = {
+  totalTransactions: number;
+  incomingTransactions: number;
+  outgoingTransactions: number;
+  totalAmount: number;
+  avgTransactionAmount: number;
+  incomingRatio: number;
+  outgoingRatio: number;
+};
+
+type StatsCardProps = {
+  title: string;
+  value: string;
+  subtitle?: string;
+  icon: React.ComponentType<{ className?: string }>;
+  color?: 'green' | 'red' | 'blue' | 'default';
+  badge?: string;
+};
+
+const mapApiDataToTransactionEntry = (
+  data: TransactionApiData[]
+): TransactionEntry[] => {
+  return data.map((item) => ({
+    ...item,
+  }));
+};
+
+const calculateTransactionStats = (
+  transactions: TransactionEntry[]
+): TransactionStats => {
+  const totalTransactions = transactions.length;
+  const incomingTransactions = transactions.filter(
+    (t) => t.type === 'PAYMENT'
+  ).length;
+  const outgoingTransactions = transactions.filter(
+    (t) => t.type === 'PAYOUT'
+  ).length;
+
+  const totalAmount = transactions.reduce(
+    (sum, t) => sum + Number(t.amount || 0),
+    0
+  );
+  const avgTransactionAmount =
+    totalAmount / Math.max(MIN_TRANSACTIONS, totalTransactions);
+
+  const incomingRatio =
+    (incomingTransactions / Math.max(MIN_TRANSACTIONS, totalTransactions)) *
+    PERCENTAGE_MULTIPLIER;
+  const outgoingRatio =
+    (outgoingTransactions / Math.max(MIN_TRANSACTIONS, totalTransactions)) *
+    PERCENTAGE_MULTIPLIER;
+
+  return {
+    totalTransactions,
+    incomingTransactions,
+    outgoingTransactions,
+    totalAmount,
+    avgTransactionAmount,
+    incomingRatio,
+    outgoingRatio,
+  };
+};
+
+const formatCurrency = (amount: number): string => {
+  return amount.toLocaleString('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+};
+
+const StatsCard = ({
+  title,
+  value,
+  subtitle,
+  icon: Icon,
+  color = 'default',
+  badge,
+}: StatsCardProps) => {
+  const colorClasses = {
+    green: 'text-emerald-600',
+    red: 'text-red-600',
+    blue: 'text-blue-600',
+    default: 'text-foreground',
+  };
+
+  const iconColorClasses = {
+    green: 'text-emerald-500',
+    red: 'text-red-500',
+    blue: 'text-blue-500',
+    default: 'text-muted-foreground',
+  };
+
+  return (
+    <Card className="border shadow-sm transition-all duration-200 hover:border-primary/20 hover:shadow-md">
+      <CardContent className="p-6">
+        <div className="flex items-center justify-between">
+          <div className="flex-1 space-y-2">
+            <div className="flex items-center gap-2">
+              <p className="font-medium text-muted-foreground text-sm leading-none">
+                {title}
+              </p>
+              {badge && (
+                <Badge className="px-2 py-0.5 text-xs" variant="outline">
+                  {badge}
+                </Badge>
+              )}
+            </div>
+            <p
+              className={`font-bold text-2xl leading-none tracking-tight ${colorClasses[color]}`}
+            >
+              {value}
+            </p>
+            {subtitle && (
+              <p className="text-muted-foreground text-xs leading-none">
+                {subtitle}
+              </p>
+            )}
+          </div>
+          <div className="flex-shrink-0">
+            <Icon className={`${ICON_SIZE_CLASS} ${iconColorClasses[color]}`} />
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+const TransactionStats = ({ stats }: { stats: TransactionStats }) => (
+  <div className="space-y-6">
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <StatsCard
+        badge="All Time"
+        color="blue"
+        icon={Receipt}
+        subtitle="Total financial transactions recorded"
+        title="Total Transactions"
+        value={stats.totalTransactions.toLocaleString()}
+      />
+      <StatsCard
+        badge="All Time"
+        color="green"
+        icon={ArrowDownCircle}
+        subtitle="Incoming payments received"
+        title="Incoming Transactions"
+        value={stats.incomingTransactions.toLocaleString()}
+      />
+      <StatsCard
+        badge="All Time"
+        color="red"
+        icon={ArrowUpCircle}
+        subtitle="Outgoing payments made"
+        title="Outgoing Transactions"
+        value={stats.outgoingTransactions.toLocaleString()}
+      />
+      <StatsCard
+        badge="All Time"
+        color="default"
+        icon={DollarSign}
+        subtitle="Total value of all transactions"
+        title="Total Transaction Value"
+        value={`$${formatCurrency(stats.totalAmount)}`}
+      />
+    </div>
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+      <StatsCard
+        color="blue"
+        icon={DollarSign}
+        subtitle="average amount per transaction"
+        title="Avg Transaction Value"
+        value={`$${formatCurrency(stats.avgTransactionAmount)}`}
+      />
+      <StatsCard
+        color="default"
+        icon={BarChart3}
+        subtitle="percentage of transactions that are incoming"
+        title="Incoming Transaction Ratio"
+        value={`${stats.incomingRatio.toFixed(0)}%`}
+      />
+      <StatsCard
+        color="default"
+        icon={BarChart3}
+        subtitle="percentage of transactions that are outgoing"
+        title="Outgoing Transaction Ratio"
+        value={`${stats.outgoingRatio.toFixed(0)}%`}
+      />
+    </div>
+  </div>
 );
 
-const LoadingCard = () => (
-  <Card className="shadow-md">
-    <CardHeader>
-      <CardTitle className="flex items-center gap-2">
-        <Loader2 className="h-5 w-5 animate-spin" />
-        Loading Transaction...
-      </CardTitle>
-    </CardHeader>
-    <CardContent className="space-y-4">
-      <LoadingSkeleton className="h-4 w-3/4" />
-      <LoadingSkeleton className="h-4 w-1/2" />
-      <LoadingSkeleton className="h-4 w-2/3" />
+const TransactionTable = ({
+  transactions,
+  deleteTransaction,
+}: {
+  transactions: TransactionEntry[];
+  deleteTransaction: (params: { id: string }) => void;
+}) => (
+  <div className="space-y-4">
+    <div className="flex items-center justify-between">
+      <div className="space-y-1">
+        <H2 className="font-semibold text-xl">Complete Transaction History</H2>
+        <p className="text-muted-foreground text-sm">
+          View and manage all your financial transactions in one place
+        </p>
+      </div>
+      <Badge className="font-medium" variant="secondary">
+        {transactions.length.toLocaleString()}{' '}
+        {transactions.length === 1 ? 'transaction' : 'transactions'}
+      </Badge>
+    </div>
+    <div className="rounded-lg border bg-card shadow-sm">
+      <CustomTable
+        columns={getColumns({
+          deleteRecord: async ({ ids }) =>
+            Promise.all(ids.map(async (id) => deleteTransaction({ id }))),
+        })}
+        data={transactions}
+        entityNamePlural="Transactions"
+        getRowIdAction={(v) => v.id}
+      />
+    </div>
+  </div>
+);
+
+const TransactionEmptyState = ({ onAddEntry }: { onAddEntry: () => void }) => (
+  <Card className="border-2 border-dashed shadow-sm transition-all duration-200 hover:border-primary/50 hover:shadow-md">
+    <CardContent className="py-16 text-center">
+      <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full border border-primary/10 bg-gradient-to-br from-primary/10 to-primary/5">
+        <Receipt className="h-10 w-10 text-primary" />
+      </div>
+      <H2 className="mb-3 font-semibold text-xl">
+        Start Managing Your Transactions
+      </H2>
+      <P className="mx-auto mb-8 max-w-lg text-muted-foreground leading-relaxed">
+        Get complete visibility into your financial movements by adding your
+        first transaction. Monitor incoming and outgoing funds, track
+        references, and analyze trends to make better business decisions.
+      </P>
+      <Button className="gap-2 px-6" onClick={onAddEntry} size="lg">
+        <Plus className={ICON_SIZE_SMALL_CLASS} />
+        Add Your First Transaction
+      </Button>
     </CardContent>
   </Card>
 );
 
-const EmptyStateCard = () => (
-  <Card className="shadow-md">
-    <CardHeader>
-      <CardTitle className="flex items-center gap-2">
-        <AlertCircle className="h-5 w-5" /> No Transactions
-      </CardTitle>
-    </CardHeader>
-    <CardContent className="py-8 text-center">
-      <AlertCircle className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
-      <p className="text-muted-foreground">
-        You haven’t recorded any transactions yet. Click "Add Transaction" to
-        get started.
-      </p>
+const TransactionQuickActions = ({
+  onAddEntry,
+}: {
+  onAddEntry: () => void;
+}) => (
+  <Card className="border-dashed transition-all duration-200 hover:border-primary/20 hover:shadow-sm">
+    <CardContent className="p-6">
+      <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
+        <div className="text-center md:text-left">
+          <H2 className="mb-2 font-semibold text-xl">Quick Actions</H2>
+          <P className="text-muted-foreground">
+            Efficiently manage your transaction records and generate insights
+          </P>
+        </div>
+        <div className="flex gap-3">
+          <Button className="gap-2" variant="outline">
+            <BarChart3 className={ICON_SIZE_SMALL_CLASS} />
+            View Analytics
+          </Button>
+          <Button className="gap-2" onClick={onAddEntry}>
+            <Plus className={ICON_SIZE_SMALL_CLASS} />
+            Add Transaction
+          </Button>
+        </div>
+      </div>
     </CardContent>
   </Card>
 );
 
 const TRANSACTIONS_PAGE = () => {
-  const { data: transactions, isLoading, error } = useUserTransactions();
+  const {
+    data: apiData = [],
+    error,
+    refetch,
+    isLoading,
+    isFetching,
+  } = useUserTransactions();
+  const { mutate: deleteTransaction } = useUserTransactionDelete();
+  const router = useRouter();
 
-  const getTransactionIcon = (type: string) =>
-    type === 'PAYMENT' ? (
-      <ArrowDownCircle className="h-5 w-5 text-white" />
-    ) : (
-      <ArrowUpCircle className="h-5 w-5 text-white" />
-    );
+  const transactions = mapApiDataToTransactionEntry(apiData);
+  const stats =
+    transactions.length > 0 ? calculateTransactionStats(transactions) : null;
 
-  const getStatusBadge = (amount: number) =>
-    amount >= 0
-      ? { color: 'bg-green-100 text-green-800', text: 'Income' }
-      : { color: 'bg-red-100 text-red-800', text: 'Expense' };
+  const handleAddEntry = () => router.push('/app/payments/transactions/create');
 
-  const formatDate = (date?: string | Date) => {
-    if (!date) {
-      return 'N/A';
-    }
-    const d = typeof date === 'string' ? new Date(date) : date;
-    return d.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    });
-  };
+  const additionalActions = (
+    <Button className="gap-2" variant="outline">
+      <Filter className={ICON_SIZE_SMALL_CLASS} />
+      Advanced Filters
+    </Button>
+  );
 
-  const formatCurrency = (amount: number | string) =>
-    `$${Number(amount).toLocaleString()}`;
+  const renderStats = stats
+    ? () => <TransactionStats stats={stats} />
+    : undefined;
 
-  if (isLoading) {
-    return (
-      <main className="space-y-8 p-6">
-        <H2 className="font-bold text-3xl">Transactions</H2>
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {Array.from({ length: 3 }, () => crypto.randomUUID()).map((k) => (
-            <LoadingCard key={k} />
-          ))}
-        </div>
-      </main>
-    );
-  }
+  const renderTable = () => (
+    <TransactionTable
+      deleteTransaction={deleteTransaction}
+      transactions={transactions}
+    />
+  );
 
-  if (error) {
-    return (
-      <main className="space-y-8 p-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <AlertCircle className="h-5 w-5 text-destructive" /> Error
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground">
-              Could not load transactions. Please refresh the page.
-            </p>
-          </CardContent>
-        </Card>
-      </main>
-    );
-  }
+  const renderEmptyState = () => (
+    <TransactionEmptyState onAddEntry={handleAddEntry} />
+  );
+
+  const renderQuickActions = () => (
+    <TransactionQuickActions onAddEntry={handleAddEntry} />
+  );
 
   return (
-    <main className="space-y-8 p-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <H2 className="font-bold text-3xl">Transactions</H2>
-          <Muted>
-            View all incoming payments and outgoing supplier payouts.
-          </Muted>
-        </div>
-        <div className="flex gap-2">
-          <Button className="gap-2" variant="outline">
-            <Filter className="h-4 w-4" /> Filter
-          </Button>
-          <Button className="gap-2">
-            <Plus className="h-4 w-4" /> Add Transaction
-          </Button>
-        </div>
-      </div>
-
-      <Separator />
-
-      {transactions?.length === 0 ? (
-        <EmptyStateCard />
-      ) : (
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {transactions?.map((tx) => {
-            const txAmount = Number(tx.amount);
-            const statusInfo = getStatusBadge(
-              tx.type === 'PAYMENT' ? txAmount : -txAmount
-            );
-
-            return (
-              <Card
-                className="flex cursor-pointer flex-col border shadow-md transition-all hover:shadow-lg"
-                key={tx.id}
-              >
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div
-                        className={`rounded-lg p-2 ${
-                          tx.type === 'PAYMENT' ? 'bg-green-500' : 'bg-red-500'
-                        }`}
-                      >
-                        {getTransactionIcon(tx.type)}
-                      </div>
-                      <div className="flex flex-col">
-                        <CardTitle className="text-lg">
-                          {tx.type === 'PAYMENT' ? 'Incoming' : 'Outgoing'}
-                        </CardTitle>
-                      </div>
-                    </div>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button size="icon" variant="ghost">
-                          <ChevronDown className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem>View Details</DropdownMenuItem>
-                        <DropdownMenuItem>Edit</DropdownMenuItem>
-                        <DropdownMenuItem>Duplicate</DropdownMenuItem>
-                        <DropdownMenuItem className="text-destructive">
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                  <div className="flex items-center justify-between pt-2">
-                    <Badge className={statusInfo.color}>
-                      {statusInfo.text}
-                    </Badge>
-                    <Muted className="text-sm">
-                      {formatDate(tx.transactionDate)}
-                    </Muted>
-                  </div>
-                </CardHeader>
-
-                <CardContent className="flex-1 space-y-2">
-                  <p className="line-clamp-2 text-muted-foreground">
-                    {tx.description || 'No description'}
-                  </p>
-                  {tx.reference && (
-                    <P className="text-sm">Reference: {tx.reference}</P>
-                  )}
-                  <div className="mt-2 flex items-center justify-between font-medium text-lg">
-                    <span className="font-semibold">
-                      {tx.type === 'PAYMENT' ? '+' : '-'}
-                      {formatCurrency(tx.amount)}
-                    </span>
-                    <Receipt className="h-5 w-5" />
-                  </div>
-                  <P className="mt-1 text-muted-foreground text-xs">
-                    Created: {formatDate(tx.createdAt)} | Updated:{' '}
-                    {formatDate(tx.updatedAt)}
-                  </P>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-      )}
-
-      <Card className="border-dashed">
-        <CardContent className="p-6">
-          <div className="flex flex-col items-center justify-center space-y-4 text-center">
-            <H2 className="font-semibold text-xl">Add New Transaction</H2>
-            <P>
-              Record a new payment or payout to keep your financials updated.
-            </P>
-            <Button className="gap-2">
-              <Plus className="h-4 w-4" /> Create Transaction
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    </main>
+    <EntityPageWrapper
+      additionalActions={additionalActions}
+      data={transactions}
+      description="View all incoming payments and outgoing supplier payouts."
+      entityNamePlural="Transactions"
+      entityNameSingular="Transaction"
+      error={error}
+      isFetching={isFetching}
+      isLoading={isLoading}
+      onAddEntry={handleAddEntry}
+      onRefetch={refetch}
+      renderEmptyState={renderEmptyState}
+      renderQuickActions={renderQuickActions}
+      renderStats={renderStats}
+      renderTable={renderTable}
+      title="Transaction Management"
+    />
   );
 };
 

@@ -22,7 +22,13 @@
     ]
   },
   "linter": {
-    "includes": ["**", "!**/worker-configuration.d.ts", "!**/components/ui/*"]
+    "includes": [
+      "**",
+      "!**/worker-configuration.d.ts",
+      "!**/components/ui/*",
+      "!**/use-data-table.ts",
+      "!**/components/data-table/*"
+    ]
   },
   "extends": ["ultracite"]
 }

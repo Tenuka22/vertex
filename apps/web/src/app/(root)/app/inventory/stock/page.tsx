@@ -1,254 +1,395 @@
 'use client';
 
 import {
-  AlertCircle,
-  ChevronDown,
+  BarChart3,
+  DollarSign,
   Filter,
-  Loader2,
   Package,
+  Plus,
+  TrendingDown,
+  TrendingUp,
 } from 'lucide-react';
-import { H2, Muted, P } from '@/components/design/typography';
+import { useRouter } from 'next/navigation';
+import { H2, P } from '@/components/design/typography';
+import EntityPageWrapper from '@/components/global/entity-page-wrapper';
+import CustomTable from '@/components/global/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Separator } from '@/components/ui/separator';
-import { useUserInventory } from '@/hooks/inventory';
-import { cn } from '@/lib/utils';
+import { Card, CardContent } from '@/components/ui/card';
+import { useUserInventory, useUserInventoryDelete } from '@/hooks/inventory';
+import { getColumns } from './columns';
 
-const STOCK_MANAGEMENT_PAGE = () => {
-  const { data: stockItems, isLoading, error } = useUserInventory();
+const ICON_SIZE_CLASS = 'h-8 w-8';
+const ICON_SIZE_SMALL_CLASS = 'h-4 w-4';
+const PERCENTAGE_MULTIPLIER = 100;
+const MIN_ITEMS = 1;
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'in_stock':
-        return { color: 'bg-green-100 text-green-800', text: 'In Stock' };
-      case 'low_stock':
-        return { color: 'bg-yellow-100 text-yellow-800', text: 'Low Stock' };
-      case 'out_of_stock':
-        return { color: 'bg-red-100 text-red-800', text: 'Out of Stock' };
-      default:
-        return { color: 'bg-gray-100 text-gray-800', text: 'Unknown' };
-    }
+type InventoryApiData = {
+  id: string;
+  quantity: number;
+  minStockLevel: number;
+  maxStockLevel: number;
+  unitCost: string | null;
+  location: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  product: {
+    id: string;
+    name: string | null;
+    type: string;
+    price: string | null;
+    category: string;
+    status: string;
+  };
+};
+
+type InventoryEntry = InventoryApiData;
+
+type InventoryStats = {
+  totalItems: number;
+  inStockItems: number;
+  lowStockItems: number;
+  outOfStockItems: number;
+  totalQuantity: number;
+  totalValue: number;
+  avgQuantity: number;
+  avgUnitCost: number;
+  inStockRatio: number;
+  lowStockRatio: number;
+  outOfStockRatio: number;
+};
+
+type StatsCardProps = {
+  title: string;
+  value: string;
+  subtitle?: string;
+  icon: React.ComponentType<{ className?: string }>;
+  color?: 'green' | 'red' | 'blue' | 'default';
+  badge?: string;
+};
+
+const mapApiDataToInventoryEntry = (
+  data: InventoryApiData[]
+): InventoryEntry[] => {
+  return data;
+};
+
+const calculateInventoryStats = (
+  inventoryItems: InventoryEntry[]
+): InventoryStats => {
+  const totalItems = inventoryItems.length;
+  const inStockItems = inventoryItems.filter(
+    (item) => item.product?.status === 'in_stock'
+  ).length;
+  const lowStockItems = inventoryItems.filter(
+    (item) => item.product?.status === 'low_stock'
+  ).length;
+  const outOfStockItems = inventoryItems.filter(
+    (item) => item.product?.status === 'out_of_stock'
+  ).length;
+
+  const totalQuantity = inventoryItems.reduce(
+    (sum, item) => sum + (item.quantity || 0),
+    0
+  );
+  const totalValue = inventoryItems.reduce(
+    (sum, item) => sum + (item.quantity || 0) * Number(item.unitCost || 0),
+    0
+  );
+
+  const avgQuantity = totalQuantity / Math.max(MIN_ITEMS, totalItems);
+  const avgUnitCost = totalValue / Math.max(MIN_ITEMS, totalQuantity);
+
+  const inStockRatio =
+    (inStockItems / Math.max(MIN_ITEMS, totalItems)) * PERCENTAGE_MULTIPLIER;
+  const lowStockRatio =
+    (lowStockItems / Math.max(MIN_ITEMS, totalItems)) * PERCENTAGE_MULTIPLIER;
+  const outOfStockRatio =
+    (outOfStockItems / Math.max(MIN_ITEMS, totalItems)) * PERCENTAGE_MULTIPLIER;
+
+  return {
+    totalItems,
+    inStockItems,
+    lowStockItems,
+    outOfStockItems,
+    totalQuantity,
+    totalValue,
+    avgQuantity,
+    avgUnitCost,
+    inStockRatio,
+    lowStockRatio,
+    outOfStockRatio,
+  };
+};
+
+const formatCurrency = (amount: number): string => {
+  return amount.toLocaleString('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+};
+
+const StatsCard = ({
+  title,
+  value,
+  subtitle,
+  icon: Icon,
+  color = 'default',
+  badge,
+}: StatsCardProps) => {
+  const colorClasses = {
+    green: 'text-emerald-600',
+    red: 'text-red-600',
+    blue: 'text-blue-600',
+    default: 'text-foreground',
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-    });
+  const iconColorClasses = {
+    green: 'text-emerald-500',
+    red: 'text-red-500',
+    blue: 'text-blue-500',
+    default: 'text-muted-foreground',
   };
-
-  const MAX_PROGRESS = 100;
-
-  if (isLoading) {
-    return (
-      <main className="relative space-y-8 p-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <H2 className="font-bold text-3xl">Stock Management</H2>
-            <Muted>
-              Monitor inventory levels and manage restocking efficiently.
-            </Muted>
-          </div>
-          <Button className="gap-2" disabled variant="outline">
-            <Filter className="h-4 w-4" /> Filter
-          </Button>
-        </div>
-        <Separator />
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {Array.from({ length: 6 }).map(() => (
-            <Card className="shadow-md" key={crypto.randomUUID()}>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                  Loading Item...
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="h-4 w-3/4 animate-pulse rounded bg-muted" />
-                <div className="h-4 w-1/2 animate-pulse rounded bg-muted" />
-                <div className="h-4 w-2/3 animate-pulse rounded bg-muted" />
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </main>
-    );
-  }
-
-  if (error) {
-    return (
-      <main className="relative space-y-8 p-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <H2 className="font-bold text-3xl">Stock Management</H2>
-            <Muted>
-              Monitor inventory levels and manage restocking efficiently.
-            </Muted>
-          </div>
-        </div>
-        <Separator />
-        <Card className="border-destructive">
-          <CardContent className="p-6">
-            <div className="flex flex-col items-center justify-center space-y-4 text-center">
-              <AlertCircle className="h-12 w-12 text-destructive" />
-              <div className="w-fit">
-                <H2 className="font-semibold text-xl">Error Loading Data</H2>
-                <P>
-                  There was an error loading your inventory items. Please try
-                  refreshing the page.
-                </P>
-              </div>
-              <Button
-                onClick={() => window.location.reload()}
-                variant="outline"
-              >
-                Refresh Page
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </main>
-    );
-  }
-
-  if (!stockItems || stockItems.length === 0) {
-    return (
-      <main className="relative space-y-8 p-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <H2 className="font-bold text-3xl">Stock Management</H2>
-            <Muted>
-              Monitor inventory levels and manage restocking efficiently.
-            </Muted>
-          </div>
-          <Button className="gap-2" variant="outline">
-            <Filter className="h-4 w-4" /> Filter
-          </Button>
-        </div>
-        <Separator />
-        <Card className="border-dashed">
-          <CardContent className="p-6">
-            <div className="flex flex-col items-center justify-center space-y-4 text-center">
-              <AlertCircle className="h-12 w-12 text-muted-foreground" />
-              <div className="w-fit">
-                <H2 className="font-semibold text-xl">No Inventory Items</H2>
-                <P>Start by adding your first inventory item.</P>
-              </div>
-              <Button className="gap-2">
-                <Package className="h-4 w-4" /> Add First Item
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </main>
-    );
-  }
 
   return (
-    <main className="relative space-y-8 p-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <H2 className="font-bold text-3xl">Stock Management</H2>
-          <Muted>
-            Monitor inventory levels and manage restocking efficiently.
-          </Muted>
-        </div>
-        <Button className="gap-2" variant="outline">
-          <Filter className="h-4 w-4" /> Filter
-        </Button>
-      </div>
-
-      <Separator />
-
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {(stockItems || []).map((item) => {
-          const statusInfo = getStatusBadge(item.product?.status || 'unknown');
-          const progressAmount = `${Math.min(
-            (item.quantity / ((item.quantity || 10) * 2)) * MAX_PROGRESS,
-            MAX_PROGRESS
-          )}%`;
-
-          return (
-            <Card
-              className={cn(
-                'flex cursor-pointer flex-col border shadow-md transition-all hover:shadow-lg',
-                item.product?.status === 'low-stock' && 'border-yellow-300',
-                item.product?.status === 'out-of-stock' && 'border-red-300'
+    <Card className="border shadow-sm transition-all duration-200 hover:border-primary/20 hover:shadow-md">
+      <CardContent className="p-6">
+        <div className="flex items-center justify-between">
+          <div className="flex-1 space-y-2">
+            <div className="flex items-center gap-2">
+              <p className="font-medium text-muted-foreground text-sm leading-none">
+                {title}
+              </p>
+              {badge && (
+                <Badge className="px-2 py-0.5 text-xs" variant="outline">
+                  {badge}
+                </Badge>
               )}
-              key={item.id}
+            </div>
+            <p
+              className={`font-bold text-2xl leading-none tracking-tight ${colorClasses[color]}`}
             >
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="rounded-lg bg-purple-500 p-2">
-                      <Package className="h-5 w-5 text-white" />
-                    </div>
-                    <div>
-                      <CardTitle className="text-lg">
-                        {item.product?.name || 'Unknown Product'}
-                      </CardTitle>
-                      <Muted className="text-sm">Product</Muted>
-                    </div>
-                  </div>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button size="icon" variant="ghost">
-                        <ChevronDown className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem>View Details</DropdownMenuItem>
-                      <DropdownMenuItem>Edit</DropdownMenuItem>
-                      <DropdownMenuItem>Restock</DropdownMenuItem>
-                      <DropdownMenuItem className="text-destructive">
-                        Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
+              {value}
+            </p>
+            {subtitle && (
+              <p className="text-muted-foreground text-xs leading-none">
+                {subtitle}
+              </p>
+            )}
+          </div>
+          <div className="flex-shrink-0">
+            <Icon className={`${ICON_SIZE_CLASS} ${iconColorClasses[color]}`} />
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
 
-                <div className="flex items-center justify-between pt-1">
-                  <Badge className={statusInfo.color}>{statusInfo.text}</Badge>
-                  <Muted className="text-sm">
-                    Updated: {formatDate(item.updatedAt.toISOString())}
-                  </Muted>
-                </div>
-              </CardHeader>
+const InventoryStats = ({ stats }: { stats: InventoryStats }) => (
+  <div className="space-y-6">
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <StatsCard
+        badge="All Time"
+        color="blue"
+        icon={Package}
+        subtitle="Total unique inventory items"
+        title="Total Items"
+        value={stats.totalItems.toLocaleString()}
+      />
+      <StatsCard
+        badge="All Time"
+        color="green"
+        icon={TrendingUp}
+        subtitle="Items currently in stock"
+        title="In Stock Items"
+        value={stats.inStockItems.toLocaleString()}
+      />
+      <StatsCard
+        badge="All Time"
+        color="red"
+        icon={TrendingDown}
+        subtitle="Items that are out of stock"
+        title="Out of Stock Items"
+        value={stats.outOfStockItems.toLocaleString()}
+      />
+      <StatsCard
+        badge="All Time"
+        color="default"
+        icon={DollarSign}
+        subtitle="Total value of all inventory"
+        title="Total Inventory Value"
+        value={`$${formatCurrency(stats.totalValue)}`}
+      />
+    </div>
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+      <StatsCard
+        color="blue"
+        icon={DollarSign}
+        subtitle="average quantity per item"
+        title="Avg Quantity Per Item"
+        value={stats.avgQuantity.toFixed(0)}
+      />
+      <StatsCard
+        color="default"
+        icon={BarChart3}
+        subtitle="percentage of items in stock"
+        title="In Stock Ratio"
+        value={`${stats.inStockRatio.toFixed(0)}%`}
+      />
+      <StatsCard
+        color="default"
+        icon={BarChart3}
+        subtitle="percentage of items with low stock"
+        title="Low Stock Ratio"
+        value={`${stats.lowStockRatio.toFixed(0)}%`}
+      />
+    </div>
+  </div>
+);
 
-              <CardContent className="flex-1">
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between font-medium text-sm">
-                    <span>Stock: {item.quantity}</span>
-                    <span>
-                      Price: ${item.product?.price || item.unitCost || '0'}
-                    </span>
-                  </div>
-
-                  <div className="h-2 w-full rounded-full bg-muted">
-                    <div
-                      className={cn(
-                        'h-full rounded-full transition-all',
-                        item.product?.status === 'in-stock' && 'bg-green-500',
-                        item.product?.status === 'low-stock' && 'bg-yellow-500',
-                        item.product?.status === 'out-of-stock' && 'bg-red-500'
-                      )}
-                      style={{ width: progressAmount }}
-                    />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
+const InventoryTable = ({
+  inventoryItems,
+  deleteInventoryItem,
+}: {
+  inventoryItems: InventoryEntry[];
+  deleteInventoryItem: (params: { id: string }) => void;
+}) => (
+  <div className="space-y-4">
+    <div className="flex items-center justify-between">
+      <div className="space-y-1">
+        <H2 className="font-semibold text-xl">Complete Inventory List</H2>
+        <p className="text-muted-foreground text-sm">
+          View and manage all your inventory items in one place
+        </p>
       </div>
-    </main>
+      <Badge className="font-medium" variant="secondary">
+        {inventoryItems.length.toLocaleString()}{' '}
+        {inventoryItems.length === 1 ? 'item' : 'items'}
+      </Badge>
+    </div>
+    <div className="rounded-lg border bg-card shadow-sm">
+      <CustomTable
+        columns={getColumns({
+          deleteRecord: async ({ ids }) =>
+            Promise.all(ids.map(async (id) => deleteInventoryItem({ id }))),
+        })}
+        data={inventoryItems}
+        entityNamePlural="Inventory Items"
+        getRowIdAction={(v) => v.id}
+      />
+    </div>
+  </div>
+);
+
+const InventoryEmptyState = ({ onAddEntry }: { onAddEntry: () => void }) => (
+  <Card className="border-2 border-dashed shadow-sm transition-all duration-200 hover:border-primary/50 hover:shadow-md">
+    <CardContent className="py-16 text-center">
+      <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full border border-primary/10 bg-gradient-to-br from-primary/10 to-primary/5">
+        <Package className="h-10 w-10 text-primary" />
+      </div>
+      <H2 className="mb-3 font-semibold text-xl">
+        Start Managing Your Inventory
+      </H2>
+      <P className="mx-auto mb-8 max-w-lg text-muted-foreground leading-relaxed">
+        Get complete visibility into your stock levels by adding your first
+        inventory item. Monitor quantities, track movements, and analyze demand
+        to make better business decisions.
+      </P>
+      <Button className="gap-2 px-6" onClick={onAddEntry} size="lg">
+        <Plus className={ICON_SIZE_SMALL_CLASS} />
+        Add Your First Inventory Item
+      </Button>
+    </CardContent>
+  </Card>
+);
+
+const InventoryQuickActions = ({ onAddEntry }: { onAddEntry: () => void }) => (
+  <Card className="border-dashed transition-all duration-200 hover:border-primary/20 hover:shadow-sm">
+    <CardContent className="p-6">
+      <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
+        <div className="text-center md:text-left">
+          <H2 className="mb-2 font-semibold text-xl">Quick Actions</H2>
+          <P className="text-muted-foreground">
+            Efficiently manage your inventory records and generate insights
+          </P>
+        </div>
+        <div className="flex gap-3">
+          <Button className="gap-2" variant="outline">
+            <BarChart3 className={ICON_SIZE_SMALL_CLASS} />
+            View Analytics
+          </Button>
+          <Button className="gap-2" onClick={onAddEntry}>
+            <Plus className={ICON_SIZE_SMALL_CLASS} />
+            Add Inventory Item
+          </Button>
+        </div>
+      </div>
+    </CardContent>
+  </Card>
+);
+
+const STOCK_MANAGEMENT_PAGE = () => {
+  const {
+    data: apiData = [],
+    error,
+    refetch,
+    isLoading,
+    isFetching,
+  } = useUserInventory();
+  const { mutate: deleteInventoryItem } = useUserInventoryDelete();
+  const router = useRouter();
+
+  const inventoryItems = mapApiDataToInventoryEntry(apiData);
+  const stats =
+    inventoryItems.length > 0 ? calculateInventoryStats(inventoryItems) : null;
+
+  const handleAddEntry = () => router.push('/app/inventory/stock/create');
+
+  const additionalActions = (
+    <Button className="gap-2" variant="outline">
+      <Filter className={ICON_SIZE_SMALL_CLASS} />
+      Advanced Filters
+    </Button>
+  );
+
+  const renderStats = stats
+    ? () => <InventoryStats stats={stats} />
+    : undefined;
+
+  const renderTable = () => (
+    <InventoryTable
+      deleteInventoryItem={deleteInventoryItem}
+      inventoryItems={inventoryItems}
+    />
+  );
+
+  const renderEmptyState = () => (
+    <InventoryEmptyState onAddEntry={handleAddEntry} />
+  );
+
+  const renderQuickActions = () => (
+    <InventoryQuickActions onAddEntry={handleAddEntry} />
+  );
+
+  return (
+    <EntityPageWrapper
+      additionalActions={additionalActions}
+      data={inventoryItems}
+      description="Monitor inventory levels and manage restocking efficiently."
+      entityNamePlural="Inventory Items"
+      entityNameSingular="Stock Item"
+      error={error}
+      isFetching={isFetching}
+      isLoading={isLoading}
+      onAddEntry={handleAddEntry}
+      onRefetch={refetch}
+      renderEmptyState={renderEmptyState}
+      renderQuickActions={renderQuickActions}
+      renderStats={renderStats}
+      renderTable={renderTable}
+      title="Stock Management"
+    />
   );
 };
 

@@ -1,220 +1,176 @@
 'use client';
 
-import {
-  AlertCircle,
-  ChevronDown,
-  Filter,
-  Loader2,
-  Plus,
-  Wallet,
-} from 'lucide-react';
-import { H2, Muted, P } from '@/components/design/typography';
+import { BarChart3, Filter, Plus } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { H2, P } from '@/components/design/typography';
+import EntityPageWrapper from '@/components/global/entity-page-wrapper';
+import CustomTable from '@/components/global/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Separator } from '@/components/ui/separator';
-import { useUserBudgets } from '@/hooks/finance';
+import { Card, CardContent } from '@/components/ui/card';
+import { useUserBudgetDelete, useUserBudgets } from '@/hooks/finance';
+import { getColumns } from './columns';
 
-const BUDGET_WARNING_THRESHOLD = 70;
-const BUDGET_OVER_THRESHOLD = 90;
-const MAX_PERCENT = 100;
+const ICON_SIZE_SMALL_CLASS = 'h-4 w-4';
 
-const LoadingSkeleton = ({ className = '' }: { className?: string }) => (
-  <div className={`animate-pulse rounded bg-muted ${className}`} />
-);
-
-const LoadingCard = () => (
-  <Card className="shadow-md">
-    <CardHeader>
-      <CardTitle className="flex items-center gap-2">
-        <Loader2 className="h-5 w-5 animate-spin" />
-        Loading Budget...
-      </CardTitle>
-    </CardHeader>
-    <CardContent className="space-y-4">
-      <LoadingSkeleton className="h-4 w-3/4" />
-      <LoadingSkeleton className="h-4 w-1/2" />
-      <LoadingSkeleton className="h-4 w-2/3" />
-    </CardContent>
-  </Card>
-);
-
-const EmptyStateCard = () => (
-  <Card className="shadow-md">
-    <CardHeader>
-      <CardTitle className="flex items-center gap-2">
-        <AlertCircle className="h-5 w-5" /> No Budgets
-      </CardTitle>
-    </CardHeader>
-    <CardContent className="py-8 text-center">
-      <AlertCircle className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
-      <p className="text-muted-foreground">
-        You haven't created any budgets yet. Click "Add Budget" to get started.
-      </p>
-    </CardContent>
-  </Card>
-);
-
-const getBudgetStatus = (spent: number, allocated: number) => {
-  const percent = (spent / allocated) * MAX_PERCENT;
-  if (percent >= BUDGET_OVER_THRESHOLD) {
-    return { color: 'bg-red-100 text-red-800', text: 'Over Budget' };
-  }
-  if (percent >= BUDGET_WARNING_THRESHOLD) {
-    return { color: 'bg-yellow-100 text-yellow-800', text: 'Warning' };
-  }
-  return { color: 'bg-green-100 text-green-800', text: 'On Track' };
+type BudgetApiData = {
+  id: string;
+  businessProfileId: string;
+  category:
+    | 'MARKETING'
+    | 'OPERATIONS'
+    | 'PAYROLL'
+    | 'UTILITIES'
+    | 'MISCELLANEOUS';
+  allocatedAmount: string;
+  spentAmount: string;
+  periodStart: Date;
+  periodEnd: Date;
+  createdAt: Date;
+  updatedAt: Date;
 };
 
-const BUDGET_PLANNING_PAGE = () => {
-  const { data: budgets, isLoading, error } = useUserBudgets();
-  const formatCurrency = (amount: number | string) => {
-    return Number(amount).toLocaleString();
-  };
+type BudgetEntry = BudgetApiData;
 
-  if (isLoading) {
-    return (
-      <main className="space-y-8 p-6">
-        <H2 className="font-bold text-3xl">Budget Planning</H2>
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {Array.from({ length: 4 }, () => crypto.randomUUID()).map((k) => (
-            <LoadingCard key={k} />
-          ))}
+const mapApiDataToBudgetEntry = (data: BudgetApiData[]): BudgetEntry[] => {
+  return data.map((item) => ({
+    ...item,
+  }));
+};
+
+const BudgetTable = ({
+  budgets,
+  deleteBudget,
+}: {
+  budgets: BudgetEntry[];
+  deleteBudget: (params: { id: string }) => void;
+}) => (
+  <div className="space-y-4">
+    <div className="flex items-center justify-between">
+      <div className="space-y-1">
+        <H2 className="font-semibold text-xl">Complete Budget History</H2>
+        <p className="text-muted-foreground text-sm">
+          Track and manage all your budget reports in one place
+        </p>
+      </div>
+      <Badge className="font-medium" variant="secondary">
+        {budgets.length.toLocaleString()}{' '}
+        {budgets.length === 1 ? 'budget' : 'budgets'}
+      </Badge>
+    </div>
+    <div className="rounded-lg border bg-card shadow-sm">
+      <CustomTable
+        columns={getColumns({
+          deleteRecord: async ({ ids }) =>
+            Promise.all(ids.map(async (id) => deleteBudget({ id }))),
+        })}
+        data={budgets}
+        entityNamePlural="Budget Reports"
+        getRowIdAction={(v) => v.id}
+      />
+    </div>
+  </div>
+);
+
+const BudgetEmptyState = ({ onAddEntry }: { onAddEntry: () => void }) => (
+  <Card className="border-2 border-dashed shadow-sm transition-all duration-200 hover:border-primary/50 hover:shadow-md">
+    <CardContent className="py-16 text-center">
+      <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full border border-primary/10 bg-gradient-to-br from-primary/10 to-primary/5">
+        <BarChart3 className="h-10 w-10 text-primary" />
+      </div>
+      <H2 className="mb-3 font-semibold text-xl">
+        Start Tracking Your Budgets
+      </H2>
+      <P className="mx-auto mb-8 max-w-lg text-muted-foreground leading-relaxed">
+        Get complete visibility into your financial planning by recording your
+        first budget. Monitor allocated amounts, spent amounts, and remaining
+        funds to make better business decisions.
+      </P>
+      <Button className="gap-2 px-6" onClick={onAddEntry} size="lg">
+        <Plus className={ICON_SIZE_SMALL_CLASS} />
+        Record Your First Budget
+      </Button>
+    </CardContent>
+  </Card>
+);
+
+const BudgetQuickActions = ({ onAddEntry }: { onAddEntry: () => void }) => (
+  <Card className="border-dashed transition-all duration-200 hover:border-primary/20 hover:shadow-sm">
+    <CardContent className="p-6">
+      <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
+        <div className="text-center md:text-left">
+          <H2 className="mb-2 font-semibold text-xl">Quick Actions</H2>
+          <P className="text-muted-foreground">
+            Efficiently manage your budget records and generate insights
+          </P>
         </div>
-      </main>
-    );
-  }
-
-  if (error) {
-    return (
-      <main className="space-y-8 p-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <AlertCircle className="h-5 w-5 text-destructive" /> Error
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground">
-              Could not load budgets. Please refresh the page.
-            </p>
-          </CardContent>
-        </Card>
-      </main>
-    );
-  }
-
-  return (
-    <main className="relative space-y-8 p-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <H2 className="font-bold text-3xl">Budget Planning</H2>
-          <Muted>Track allocated budgets and spending by category.</Muted>
-        </div>
-        <div className="flex gap-2">
+        <div className="flex gap-3">
           <Button className="gap-2" variant="outline">
-            <Filter className="h-4 w-4" /> Filter
+            <BarChart3 className={ICON_SIZE_SMALL_CLASS} />
+            View Analytics
           </Button>
-          <Button className="gap-2">
-            <Plus className="h-4 w-4" /> Add Category
+          <Button className="gap-2" onClick={onAddEntry}>
+            <Plus className={ICON_SIZE_SMALL_CLASS} />
+            Add Budget
           </Button>
         </div>
       </div>
+    </CardContent>
+  </Card>
+);
 
-      <Separator />
+const BUDGET_PAGE = () => {
+  const {
+    data: apiData = [],
+    error,
+    refetch,
+    isLoading,
+    isFetching,
+  } = useUserBudgets();
+  const { mutate: deleteBudget } = useUserBudgetDelete();
+  const router = useRouter();
 
-      {budgets?.length === 0 ? (
-        <EmptyStateCard />
-      ) : (
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {budgets?.map((budget) => {
-            const allocated = Number(budget.allocatedAmount);
-            const spent = Number(budget.spentAmount);
-            const status = getBudgetStatus(spent, allocated);
-            const progress = (spent / allocated) * MAX_PERCENT;
+  const budgets = mapApiDataToBudgetEntry(apiData);
 
-            return (
-              <Card
-                className="flex cursor-pointer flex-col border shadow-md transition-all hover:shadow-lg"
-                key={budget.id}
-              >
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="rounded-lg bg-blue-500 p-2">
-                        <Wallet className="h-5 w-5 text-white" />
-                      </div>
-                      <div>
-                        <CardTitle className="text-lg">
-                          {budget.category}
-                        </CardTitle>
-                        <Muted className="text-sm">
-                          {new Date(budget.periodStart).toLocaleDateString()} -{' '}
-                          {new Date(budget.periodEnd).toLocaleDateString()}
-                        </Muted>
-                      </div>
-                    </div>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button size="icon" variant="ghost">
-                          <ChevronDown className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem>View Details</DropdownMenuItem>
-                        <DropdownMenuItem>Edit</DropdownMenuItem>
-                        <DropdownMenuItem className="text-destructive">
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
+  const handleAddEntry = () => router.push('/app/finance/budget/create');
 
-                  <div className="flex items-center justify-between pt-1">
-                    <Badge className={status.color}>{status.text}</Badge>
-                  </div>
-                </CardHeader>
+  const additionalActions = (
+    <Button className="gap-2" variant="outline">
+      <Filter className={ICON_SIZE_SMALL_CLASS} />
+      Advanced Filters
+    </Button>
+  );
 
-                <CardContent className="flex-1 space-y-3">
-                  <div className="flex justify-between text-muted-foreground text-sm">
-                    <span>Allocated: ${formatCurrency(allocated)}</span>
-                    <span>Spent: ${formatCurrency(spent)}</span>
-                  </div>
-                  <div className="flex justify-between font-medium text-sm">
-                    <span>{progress.toFixed(0)}%</span>
-                    <span>
-                      Remaining: $
-                      {formatCurrency(Math.max(allocated - spent, 0))}
-                    </span>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-      )}
+  const renderTable = () => (
+    <BudgetTable budgets={budgets} deleteBudget={deleteBudget} />
+  );
 
-      <Card className="border-dashed">
-        <CardContent className="p-6">
-          <div className="flex flex-col items-center justify-center space-y-4 text-center">
-            <div className="w-fit">
-              <H2 className="font-semibold text-xl">Plan a New Budget</H2>
-              <P>Create a new budget category to track expenses.</P>
-            </div>
-            <Button className="gap-2">
-              <Plus className="h-4 w-4" /> Add Budget
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    </main>
+  const renderEmptyState = () => (
+    <BudgetEmptyState onAddEntry={handleAddEntry} />
+  );
+
+  const renderQuickActions = () => (
+    <BudgetQuickActions onAddEntry={handleAddEntry} />
+  );
+
+  return (
+    <EntityPageWrapper
+      additionalActions={additionalActions}
+      data={budgets}
+      description="Monitor your financial planning by tracking all allocated amounts, spent amounts, and remaining funds over time."
+      entityNamePlural="Budget Reports"
+      entityNameSingular="Budget"
+      error={error}
+      isFetching={isFetching}
+      isLoading={isLoading}
+      onAddEntry={handleAddEntry}
+      onRefetch={refetch}
+      renderEmptyState={renderEmptyState}
+      renderQuickActions={renderQuickActions}
+      renderTable={renderTable}
+      title="Budget Management"
+    />
   );
 };
 
-export default BUDGET_PLANNING_PAGE;
+export default BUDGET_PAGE;
