@@ -2,10 +2,6 @@
   "name": "@repo/db",
   "type": "module",
   "private": true,
-  "scripts": {
-    "build": "tsc",
-    "dev": "tsc --watch"
-  },
   "exports": {
     ".": "./src/index.ts",
     "./*": "./src/*.ts"
