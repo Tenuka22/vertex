@@ -7,14 +7,8 @@
     "dev": "tsc --watch"
   },
   "exports": {
-    ".": {
-      "types": "./src/index.ts",
-      "default": "./dist/index.js"
-    },
-    "./*": {
-      "types": "./src/*.ts",
-      "default": "./dist/*.js"
-    }
+    ".": "./src/index.ts",
+    "./*": "./src/*.ts"
   },
   "devDependencies": {
     "@types/bun": "latest"
