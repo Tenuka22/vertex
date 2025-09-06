@@ -3,7 +3,9 @@ import { db as creatDB } from '@repo/db';
 import * as schema from '@repo/db/schema/auth';
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
-import { bearer, openAPI } from 'better-auth/plugins';
+import { bearer, createAuthMiddleware, openAPI } from 'better-auth/plugins';
+
+const SESSION_CACHE_SECONDS = 5;
 
 export const authClient = ({
   BETTER_AUTH_SECRET,
@@ -36,6 +38,12 @@ export const authClient = ({
         clientSecret: GOOGLE_CLIENT_SECRET as string,
       },
     },
+    session: {
+      cookieCache: {
+        enabled: true,
+        maxAge: SESSION_CACHE_SECONDS * 60,
+      },
+    },
     secret: BETTER_AUTH_SECRET,
     baseURL: BETTER_AUTH_URL,
     advanced: {
@@ -50,6 +58,16 @@ export const authClient = ({
         // biome-ignore lint/suspicious/noConsole: Need to console
         await console.log(e);
       },
+    },
+    hooks: {
+      after: createAuthMiddleware(async (ctx) => {
+        const { path, context, redirect } = await ctx;
+        if (path.startsWith('/callback') && context.newSession) {
+          throw redirect(
+            `/client-redirect/callback?token=${context.newSession.session.token}`
+          );
+        }
+      }),
     },
     plugins: [
       bearer(),

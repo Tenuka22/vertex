@@ -7,7 +7,5 @@ export const useUserBusinessInformation = () =>
 export const useUserBusinessProfile = () =>
   useQuery(orpc.businessProfile.get.queryOptions({}));
 
-export const useUserBusinessLocations = (businessProfileId?: string) =>
-  useQuery(
-    orpc.businessLocation.get.queryOptions({ input: { businessProfileId } })
-  );
+export const useUserBusinessLocations = () =>
+  useQuery(orpc.businessLocation.get.queryOptions());

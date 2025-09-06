@@ -428,7 +428,7 @@ const LOCATIONS_PAGE = () => {
     data: businessLocations,
     isFetching: isFetchingLocations,
     error: locationsError,
-  } = useUserBusinessLocations(businessProfile?.id);
+  } = useUserBusinessLocations();
 
   const isFetching = isFetchingProfile || isFetchingLocations;
   const hasError = profileError || locationsError;

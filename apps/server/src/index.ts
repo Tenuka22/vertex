@@ -42,8 +42,19 @@ app.get('/', (c) => {
   return c.text('OK');
 });
 
-app.get('/client-redirect', (c) => {
-  return c.redirect(new URL('/app', env.CORS_ORIGIN));
+const RedirectPath = /^\/client-redirect/;
+
+app.get('/client-redirect/*', (c) => {
+  const path = c.req.path.replace(RedirectPath, '');
+
+  const url = new URL(`${path}`, env.CORS_ORIGIN);
+
+  const searchParams = c.req.query();
+  for (const [key, value] of Object.entries(searchParams)) {
+    url.searchParams.append(key, value);
+  }
+
+  return c.redirect(url.toString());
 });
 
 export default app;
