@@ -1,5 +1,4 @@
 import { useForm } from '@tanstack/react-form';
-import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { authClient } from '@/lib/auth-client';
 import { H3, Muted, P } from '../design/typography';
@@ -17,8 +16,6 @@ export const SignInForm = ({
 }: {
   onSwitchToSignUp: () => void;
 }) => {
-  const router = useRouter();
-
   const form = useForm({
     defaultValues: {
       email: '',
@@ -29,14 +26,18 @@ export const SignInForm = ({
         {
           email: value.email,
           password: value.password,
+          callbackURL: '/client-redirect',
         },
         {
           onSuccess: () => {
             toast.success('Sign in successful');
-            router.push('/');
           },
           onError: (error) => {
-            toast.error(error.error.message || error.error.statusText);
+            toast.error(
+              error.error.message ||
+                error.error.statusText ||
+                'Unknown Error occured while login'
+            );
           },
         }
       );

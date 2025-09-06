@@ -1,5 +1,4 @@
 import { useForm } from '@tanstack/react-form';
-import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { authClient } from '@/lib/auth-client';
 import { H3, Muted, P } from '../design/typography';
@@ -17,8 +16,6 @@ export const SignUpForm = ({
 }: {
   onSwitchToSignIn: () => void;
 }) => {
-  const router = useRouter();
-
   const form = useForm({
     defaultValues: {
       email: '',
@@ -31,11 +28,11 @@ export const SignUpForm = ({
           email: value.email,
           password: value.password,
           name: value.name,
+          callbackURL: '/client-redirect',
         },
         {
           onSuccess: () => {
             toast.success('Sign up successful');
-            router.push('/');
           },
           onError: (error) => {
             toast.error(error.error.message || error.error.statusText);

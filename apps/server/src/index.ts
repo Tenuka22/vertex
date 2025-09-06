@@ -42,4 +42,8 @@ app.get('/', (c) => {
   return c.text('OK');
 });
 
+app.get('/client-redirect', (c) => {
+  return c.redirect(new URL('/app', env.CORS_ORIGIN));
+});
+
 export default app;

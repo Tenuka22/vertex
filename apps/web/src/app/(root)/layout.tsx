@@ -1,8 +1,7 @@
 import type { ReactNode } from 'react';
-import { Sidebar } from '@/components/navigation/app/sidebar';
 
 const ROOT_LAYOUT = ({ children }: { children: ReactNode }) => {
-  return <Sidebar>{children}</Sidebar>;
+  return <>{children}</>;
 };
 
 export default ROOT_LAYOUT;
