@@ -1,9 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { client } from '@/utils/orpc';
+import {
+  deleteBusinessContact,
+  getUserBusinessContacts,
+} from '@/actions/business-contacts';
 
 export const useUserBusinessContacts = () =>
   useQuery({
-    queryFn: async () => await client.businessContact.get(),
+    queryFn: async () => await getUserBusinessContacts(),
     queryKey: ['user', 'businessContacts'],
   });
 
@@ -11,7 +14,7 @@ export const useUserBusinessContactDelete = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (params: { id: string }) =>
-      await client.businessContact.delete(params),
+      await deleteBusinessContact(params.id),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: ['user', 'businessContacts'],

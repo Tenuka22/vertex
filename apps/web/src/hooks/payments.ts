@@ -1,9 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { client } from '@/utils/orpc';
+import {
+  deletePaymentMethod,
+  getUserPaymentMethods,
+} from '@/actions/payment-methods';
+import { deleteTransaction, getUserTransactions } from '@/actions/transactions';
 
 export const useUserPaymentMethods = () =>
   useQuery({
-    queryFn: async () => await client.payment.get(),
+    queryFn: async () => await getUserPaymentMethods(),
     queryKey: ['user', 'paymentMethods'],
   });
 
@@ -11,7 +15,7 @@ export const useUserPaymentMethodDelete = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (params: { id: string }) =>
-      await client.payment.delete(params),
+      await deletePaymentMethod(params.id),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: ['user', 'paymentMethods'],
@@ -22,7 +26,7 @@ export const useUserPaymentMethodDelete = () => {
 
 export const useUserTransactions = () =>
   useQuery({
-    queryFn: async () => await client.transaction.get(),
+    queryFn: async () => await getUserTransactions(),
     queryKey: ['user', 'transactions'],
   });
 
@@ -30,7 +34,7 @@ export const useUserTransactionDelete = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (params: { id: string }) =>
-      await client.transaction.delete(params),
+      await deleteTransaction(params.id),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: ['user', 'transactions'],

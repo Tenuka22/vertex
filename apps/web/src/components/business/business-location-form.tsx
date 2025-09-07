@@ -295,7 +295,7 @@ export const BusinessLocationForm = <TDefaultData extends { id: string }>({
     onSubmit: async ({ value }) => {
       try {
         await updateCreateLocation({
-          locationData: value,
+          ...value,
         });
         toast.success('Location saved!');
       } catch (error) {

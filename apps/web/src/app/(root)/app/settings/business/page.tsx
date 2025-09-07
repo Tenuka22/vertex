@@ -597,11 +597,13 @@ const COMPANY_PAGE = () => {
     data: businessInfo,
     isLoading: isLoadingInfo,
     error: infoError,
+    refetch: infoRefetch,
   } = useUserBusinessInformation();
   const {
     data: businessProfile,
     isLoading: isLoadingProfile,
     error: profileError,
+    refetch: profileRefetch,
   } = useUserBusinessProfile();
 
   const business = useMemo(
@@ -665,7 +667,8 @@ const COMPANY_PAGE = () => {
       isLoading={isLoading}
       onAddEntry={handleAddEntry}
       onRefetch={() => {
-        console.log('refetch');
+        profileRefetch();
+        infoRefetch();
       }}
       renderEmptyState={renderEmptyState}
       renderQuickActions={renderQuickActions}

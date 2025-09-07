@@ -1,9 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { client } from '@/utils/orpc';
+import { deleteInventory, getUserInventory } from '@/actions/inventory';
+import { getUserPurchaseOrders } from '@/actions/purchase-orders';
+import { deleteSupplier, getUserSuppliers } from '@/actions/suppliers';
 
 export const useUserInventory = () =>
   useQuery({
-    queryFn: async () => await client.inventory.get(),
+    queryFn: async () => await getUserInventory(),
     queryKey: ['user', 'inventory'],
   });
 
@@ -11,7 +13,7 @@ export const useUserInventoryDelete = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (params: { id: string }) =>
-      await client.inventory.delete(params),
+      await deleteInventory(params.id),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: ['user', 'inventory'],
@@ -22,7 +24,7 @@ export const useUserInventoryDelete = () => {
 
 export const useUserSuppliers = () =>
   useQuery({
-    queryFn: async () => await client.supplier.get(),
+    queryFn: async () => await getUserSuppliers(),
     queryKey: ['user', 'suppliers'],
   });
 
@@ -30,7 +32,7 @@ export const useUserSupplierDelete = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (params: { id: string }) =>
-      await client.supplier.delete(params),
+      await deleteSupplier(params.id),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: ['user', 'suppliers'],
@@ -41,6 +43,6 @@ export const useUserSupplierDelete = () => {
 
 export const useUserPurchaseOrders = () =>
   useQuery({
-    queryFn: async () => await client.purchaseOrder.get(),
+    queryFn: async () => await getUserPurchaseOrders(),
     queryKey: ['user', 'purchaseOrders'],
   });
