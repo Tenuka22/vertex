@@ -1,9 +1,10 @@
-import { db as creatDB } from '@repo/db';
-import { account, session, user, verification } from '@repo/db/schema/auth';
+// biome-ignore lint/performance/noNamespaceImport:  WholeSchema Required
+import * as schema from '@repo/db/schema/primary';
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
-import { bearer, createAuthMiddleware, openAPI } from 'better-auth/plugins';
-import { redirect } from 'next/navigation';
+import { nextCookies } from 'better-auth/next-js';
+import { openAPI } from 'better-auth/plugins';
+import { db } from './db';
 
 const SESSION_CACHE_SECONDS = 5;
 
@@ -11,11 +12,9 @@ export const serverAuth = ({
   BETTER_AUTH_SECRET,
   BETTER_AUTH_URL,
   CORS_ORIGIN,
-  DATABASE_URL,
   GOOGLE_CLIENT_ID,
   GOOGLE_CLIENT_SECRET,
 }: {
-  DATABASE_URL: string;
   CORS_ORIGIN: string;
   GOOGLE_CLIENT_ID: string;
   GOOGLE_CLIENT_SECRET: string;
@@ -23,13 +22,19 @@ export const serverAuth = ({
   BETTER_AUTH_URL: string;
 }) =>
   betterAuth({
-    database: drizzleAdapter(creatDB({ DATABASE_URL }), {
+    database: drizzleAdapter(db, {
       provider: 'pg',
-      schema: { account, session, user, verification },
+      schema,
     }),
     trustedOrigins: [CORS_ORIGIN],
     emailAndPassword: {
       enabled: true,
+    },
+    account: {
+      accountLinking: {
+        enabled: true,
+        trustedProviders: ['google', 'email-password'],
+      },
     },
     socialProviders: {
       google: {
@@ -47,7 +52,7 @@ export const serverAuth = ({
     baseURL: BETTER_AUTH_URL,
     advanced: {
       defaultCookieAttributes: {
-        sameSite: 'none',
+        sameSite: 'Strict',
         secure: process.env.NODE_ENV === 'production',
         httpOnly: true,
       },
@@ -58,16 +63,8 @@ export const serverAuth = ({
         await console.log(e);
       },
     },
-    hooks: {
-      after: createAuthMiddleware(async (ctx) => {
-        const { path, context } = await ctx;
-        if (path.startsWith('/callback') && context.newSession) {
-          redirect(`/callback?token=${context.newSession.session.token}`);
-        }
-      }),
-    },
     plugins: [
-      bearer(),
+      nextCookies(),
       openAPI({
         path: '/docs',
       }),
@@ -75,7 +72,6 @@ export const serverAuth = ({
   });
 
 export const auth = serverAuth({
-  DATABASE_URL: process.env.DATABASE_URL || '',
   CORS_ORIGIN: process.env.NEXT_PUBLIC_CORS_ORIGIN || '',
   GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID || '',
   GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET || '',

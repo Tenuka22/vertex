@@ -28,7 +28,7 @@ export const SignUpForm = ({
           email: value.email,
           password: value.password,
           name: value.name,
-          callbackURL: '/client-redirect',
+          callbackURL: '/app',
         },
         {
           onSuccess: () => {

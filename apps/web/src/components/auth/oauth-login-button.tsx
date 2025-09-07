@@ -14,7 +14,7 @@ export const OAuthLoginButton = () => {
     await authClient.signIn.social(
       {
         provider: 'google',
-        callbackURL: '/client-redirect',
+        callbackURL: '/app',
       },
       {
         onError: (error) => {
