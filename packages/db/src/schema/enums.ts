@@ -14,8 +14,9 @@ export const expenseCategoryEnum = pgEnum('expenseCategoryEnum', [
 ]);
 
 export const transactionTypeEnum = pgEnum('transaction_type', [
-  'PAYMENT',
-  'PAYOUT',
+  'INCOME',
+  'EXPENSE',
+  'TRANSFER',
 ]);
 
 export const budgetCategoryEnum = pgEnum('budget_category', [

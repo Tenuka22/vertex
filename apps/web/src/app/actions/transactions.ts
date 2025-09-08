@@ -1,6 +1,10 @@
 'use server';
 
-import { TransactionInsert, transactions } from '@repo/db/schema/primary';
+import {
+  TransactionInsert,
+  transactions,
+  type transactionTypeEnum,
+} from '@repo/db/schema/primary';
 import { and, eq, gte, lte } from 'drizzle-orm';
 import type z from 'zod';
 import { db } from '@/lib/db';
@@ -58,7 +62,7 @@ export async function createUpdateTransaction(
 export async function getUserTransactions(input?: {
   fromDate?: Date;
   toDate?: Date;
-  type?: 'PAYMENT' | 'PAYOUT';
+  type?: (typeof transactionTypeEnum.enumValues)[number];
 }) {
   const businessProfileId = await getBusinessProfileId();
 
@@ -110,5 +114,27 @@ export async function deleteTransaction(id: string) {
     success: true,
     message: 'Transaction deleted successfully',
     deletedTransaction,
+  };
+}
+
+export async function getUserTransaction(id: string) {
+  const businessProfileId = await getBusinessProfileId();
+
+  const existingTransaction = await db
+    .select()
+    .from(transactions)
+    .where(eq(transactions.id, id))
+    .then((v) => v[0]);
+
+  if (
+    !existingTransaction ||
+    existingTransaction.businessProfileId !== businessProfileId
+  ) {
+    throw new Error('No transaction found or unauthorized to delete');
+  }
+
+  return {
+    success: true,
+    transaction: existingTransaction,
   };
 }

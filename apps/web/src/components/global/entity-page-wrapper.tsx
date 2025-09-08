@@ -136,8 +136,8 @@ const ErrorCard = ({
 
   const getErrorCardClassName = () => {
     return variant === 'warning'
-      ? 'border-yellow-200 bg-yellow-50/50'
-      : 'border-destructive/20 bg-destructive/5';
+      ? 'border-yellow-200'
+      : 'border-destructive/20';
   };
 
   const getTitleClassName = () => {
@@ -227,7 +227,7 @@ const EntityPageWrapper = ({
         <Separator />
 
         {renderStats && (
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
             {Array.from({ length: LOADING_SKELETON_COUNT }, () =>
               crypto.randomUUID()
             ).map((i) => (
@@ -300,6 +300,8 @@ const EntityPageWrapper = ({
       </div>
       <Separator />
 
+      {renderQuickActions?.()}
+
       {dataCount === 0 ? (
         renderEmptyState?.() || (
           <DefaultEmptyState
@@ -313,8 +315,6 @@ const EntityPageWrapper = ({
           {renderTable?.()}
         </>
       )}
-
-      {renderQuickActions?.()}
     </main>
   );
 };

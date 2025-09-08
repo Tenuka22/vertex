@@ -1,7 +1,7 @@
 'use server';
 
 import { expenseCategories, transactions } from '@repo/db/schema/primary';
-import { and, eq, gte, lte, sum } from 'drizzle-orm';
+import { and, eq, gte, lte, not, sum } from 'drizzle-orm';
 import { db } from '@/lib/db';
 import { getUserBusinessProfile } from './business';
 
@@ -34,7 +34,7 @@ export async function getProfitLossData(input: {
     .where(
       and(
         eq(transactions.businessProfileId, businessProfileId),
-        eq(transactions.type, 'PAYMENT'),
+        not(eq(transactions.type, 'INCOME')),
         gte(transactions.transactionDate, startDate),
         lte(transactions.transactionDate, endDate)
       )
@@ -54,7 +54,7 @@ export async function getProfitLossData(input: {
     .where(
       and(
         eq(transactions.businessProfileId, businessProfileId),
-        eq(transactions.type, 'PAYOUT'),
+        eq(transactions.type, 'INCOME'),
         gte(transactions.transactionDate, startDate),
         lte(transactions.transactionDate, endDate)
       )
@@ -102,7 +102,7 @@ export async function getProfitLossSummary(input: {
     .where(
       and(
         eq(transactions.businessProfileId, businessProfileId),
-        eq(transactions.type, 'PAYMENT'),
+        not(eq(transactions.type, 'INCOME')),
         gte(transactions.transactionDate, startDate),
         lte(transactions.transactionDate, endDate)
       )
@@ -116,7 +116,7 @@ export async function getProfitLossSummary(input: {
     .where(
       and(
         eq(transactions.businessProfileId, businessProfileId),
-        eq(transactions.type, 'PAYOUT'),
+        eq(transactions.type, 'INCOME'),
         gte(transactions.transactionDate, startDate),
         lte(transactions.transactionDate, endDate)
       )

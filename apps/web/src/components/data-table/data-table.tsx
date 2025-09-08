@@ -40,8 +40,8 @@ export function DataTable<TData>({
           width: `${containerRes.current?.clientWidth}px`,
         }}
       >
-        <Scroller asChild className="w-full p-4" orientation="horizontal">
-          <div className="flex-1 rounded-md border">
+        <Scroller asChild className="flex p-4" orientation="horizontal">
+          <div className="flex-1 rounded-md border w-1">
             <Table>
               <TableHeader>
                 {table.getHeaderGroups().map((headerGroup) => (

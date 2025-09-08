@@ -27,7 +27,7 @@ import { buttonVariants } from '@/components/ui/button';
 import { useDataTable } from '@/hooks/use-data-table';
 import { deleteTableRecords, exportTableToCSV } from '@/lib/data-management';
 
-type CustomTableProps<T> = {
+type CustomTableProps<T extends { id: string }> = {
   data: T[];
   columns: ColumnDef<T>[];
   entityNamePlural: string;
@@ -35,7 +35,7 @@ type CustomTableProps<T> = {
   onDelete?: (ids: string[]) => Promise<void>;
 };
 
-function Table<T>({
+function Table<T extends { id: string }>({
   data,
   columns,
   entityNamePlural,
@@ -83,6 +83,7 @@ function Table<T>({
                 }
 
                 setIsDeleteActionLoading(true);
+
                 await deleteTableRecords(
                   table,
                   async ({ ids }) => {
@@ -90,6 +91,7 @@ function Table<T>({
                   },
                   getRowIdAction
                 );
+
                 setIsDeleteActionLoading(false);
               }}
             >
@@ -141,7 +143,7 @@ function Table<T>({
   );
 }
 
-const CustomTable = <T,>({
+const CustomTable = <T extends { id: string }>({
   data,
   columns,
   entityNamePlural,

@@ -1,44 +1,32 @@
 'use client';
 
+import type { cashFlows } from '@repo/db/schema/primary';
 import {
   Activity,
   BarChart3,
   Calendar,
   DollarSign,
-  Filter,
   Plus,
   TrendingDown,
   TrendingUp,
 } from 'lucide-react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { H2, P } from '@/components/design/typography';
+import { H3, Muted, P } from '@/components/design/typography';
 import EntityPageWrapper from '@/components/global/entity-page-wrapper';
 import CustomTable from '@/components/global/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { useUserCashFlowDelete, useUserCashFlows } from '@/hooks/finance';
+import { useDeleteUserCashFlow, useUserCashFlows } from '@/hooks/finance';
 import { getColumns } from './columns';
 
-// Constants
 const ICON_SIZE_CLASS = 'h-8 w-8';
 const ICON_SIZE_SMALL_CLASS = 'h-4 w-4';
 const PERCENTAGE_MULTIPLIER = 100;
 const MIN_TRANSACTIONS = 1;
 
-// Types
-type CashFlowApiData = {
-  id: string;
-  businessProfileId: string;
-  transactionId: string;
-  direction: 'INCOMING' | 'OUTGOING';
-  amount: string;
-  flowDate: Date;
-  createdAt: Date;
-  updatedAt: Date;
-};
-
-type CashFlowEntry = CashFlowApiData & {
+type CashFlowEntry = typeof cashFlows.$inferSelect & {
   type: 'PAYMENT' | 'PAYOUT';
   transactionDate: string | Date;
 };
@@ -66,9 +54,8 @@ type StatsCardProps = {
   badge?: string;
 };
 
-// Utility functions
 const mapApiDataToCashFlowEntry = (
-  data: CashFlowApiData[]
+  data: (typeof cashFlows.$inferSelect)[]
 ): CashFlowEntry[] => {
   return data.map((item) => ({
     ...item,
@@ -80,21 +67,21 @@ const mapApiDataToCashFlowEntry = (
   }));
 };
 
-const calculateStats = (cashFlows: CashFlowEntry[]): Stats => {
+const calculateStats = (cashFlowData: CashFlowEntry[]): Stats => {
   const currentMonth = new Date().getMonth();
   const currentYear = new Date().getFullYear();
 
-  const totalIncome = cashFlows
+  const totalIncome = cashFlowData
     .filter((cf) => cf.type === 'PAYMENT')
     .reduce((sum, cf) => sum + Number(cf.amount || 0), 0);
 
-  const totalExpenses = cashFlows
+  const totalExpenses = cashFlowData
     .filter((cf) => cf.type === 'PAYOUT')
     .reduce((sum, cf) => sum + Number(cf.amount || 0), 0);
 
   const netFlow = totalIncome - totalExpenses;
 
-  const thisMonthTransactions = cashFlows.filter((cf) => {
+  const thisMonthTransactions = cashFlowData.filter((cf) => {
     const transactionDate = new Date(cf.transactionDate);
     return (
       transactionDate.getMonth() === currentMonth &&
@@ -110,10 +97,10 @@ const calculateStats = (cashFlows: CashFlowEntry[]): Stats => {
     .filter((cf) => cf.type === 'PAYOUT')
     .reduce((sum, cf) => sum + Number(cf.amount || 0), 0);
 
-  const incomeTransactions = cashFlows.filter(
+  const incomeTransactions = cashFlowData.filter(
     (cf) => cf.type === 'PAYMENT'
   ).length;
-  const expenseTransactions = cashFlows.filter(
+  const expenseTransactions = cashFlowData.filter(
     (cf) => cf.type === 'PAYOUT'
   ).length;
 
@@ -122,7 +109,7 @@ const calculateStats = (cashFlows: CashFlowEntry[]): Stats => {
   const avgExpense =
     totalExpenses / Math.max(MIN_TRANSACTIONS, expenseTransactions);
 
-  const totalTransactions = cashFlows.length;
+  const totalTransactions = cashFlowData.length;
 
   return {
     totalIncome,
@@ -181,7 +168,7 @@ const StatsCard = ({
 
   return (
     <Card className="border shadow-sm transition-all duration-200 hover:border-primary/20 hover:shadow-md">
-      <CardContent className="p-6">
+      <CardContent>
         <div className="flex items-center justify-between">
           <div className="flex-1 space-y-2">
             <div className="flex items-center gap-2">
@@ -215,8 +202,8 @@ const StatsCard = ({
 };
 
 const CashFlowStats = ({ stats }: { stats: Stats }) => (
-  <div className="space-y-6">
-    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+  <div className="flex flex-col gap-4">
+    <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 2xl:grid-cols-4">
       <StatsCard
         badge="All Time"
         color="green"
@@ -252,7 +239,7 @@ const CashFlowStats = ({ stats }: { stats: Stats }) => (
         value={`$${formatCurrency(Math.abs(stats.thisMonthIncome - stats.thisMonthExpenses))}`}
       />
     </div>
-    <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+    <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 2xl:grid-cols-4">
       <StatsCard
         color="blue"
         icon={DollarSign}
@@ -279,32 +266,32 @@ const CashFlowStats = ({ stats }: { stats: Stats }) => (
 );
 
 const CashFlowTable = ({
-  cashFlows,
+  cashFlowData,
   deleteCashFlow,
 }: {
-  cashFlows: CashFlowEntry[];
+  cashFlowData: CashFlowEntry[];
   deleteCashFlow: (params: { id: string }) => void;
 }) => (
   <div className="space-y-4">
     <div className="flex items-center justify-between">
       <div className="space-y-1">
-        <H2 className="font-semibold text-xl">Complete Transaction History</H2>
+        <H3 className="font-semibold text-xl">Complete Transaction History</H3>
         <p className="text-muted-foreground text-sm">
           Track and manage all your cash flow transactions in one place
         </p>
       </div>
       <Badge className="font-medium" variant="secondary">
-        {cashFlows.length.toLocaleString()}{' '}
-        {cashFlows.length === 1 ? 'transaction' : 'transactions'}
+        {cashFlowData.length.toLocaleString()}{' '}
+        {cashFlowData.length === 1 ? 'transaction' : 'transactions'}
       </Badge>
     </div>
-    <div className="rounded-lg border bg-card shadow-sm">
+    <div className="rounded-lg border bg-card p-1 shadow-sm">
       <CustomTable
         columns={getColumns({
           deleteRecord: async ({ ids }) =>
             Promise.all(ids.map(async (id) => deleteCashFlow({ id }))),
         })}
-        data={cashFlows}
+        data={cashFlowData}
         entityNamePlural="Cash Flow Transactions"
         getRowIdAction={(v) => v.id}
       />
@@ -318,9 +305,9 @@ const CashFlowEmptyState = ({ onAddEntry }: { onAddEntry: () => void }) => (
       <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full border border-primary/10 bg-gradient-to-br from-primary/10 to-primary/5">
         <BarChart3 className="h-10 w-10 text-primary" />
       </div>
-      <H2 className="mb-3 font-semibold text-xl">
+      <H3 className="mb-3 font-semibold text-xl">
         Start Tracking Your Cash Flow
-      </H2>
+      </H3>
       <P className="mx-auto mb-8 max-w-lg text-muted-foreground leading-relaxed">
         Get complete visibility into your financial health by recording your
         first transaction. Monitor incoming revenue, track expenses, and analyze
@@ -335,31 +322,28 @@ const CashFlowEmptyState = ({ onAddEntry }: { onAddEntry: () => void }) => (
 );
 
 const CashFlowQuickActions = ({ onAddEntry }: { onAddEntry: () => void }) => (
-  <Card className="border-dashed transition-all duration-200 hover:border-primary/20 hover:shadow-sm">
-    <CardContent className="p-6">
-      <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
-        <div className="text-center md:text-left">
-          <H2 className="mb-2 font-semibold text-xl">Quick Actions</H2>
-          <P className="text-muted-foreground">
-            Efficiently manage your cash flow records and generate insights
-          </P>
-        </div>
-        <div className="flex gap-3">
-          <Button className="gap-2" variant="outline">
+  <Card>
+    <CardContent>
+      <H3 className="font-semibold text-xl">Quick Actions</H3>
+      <Muted className="text-muted-foreground">
+        Efficiently manage your cash flow records and generate insights
+      </Muted>
+      <div className="flex w-fit justify-start gap-3 pt-4">
+        <Button asChild className="gap-2" variant="outline">
+          <Link href="/app/analytics">
             <BarChart3 className={ICON_SIZE_SMALL_CLASS} />
             View Analytics
-          </Button>
-          <Button className="gap-2" onClick={onAddEntry}>
-            <Plus className={ICON_SIZE_SMALL_CLASS} />
-            Add Transaction
-          </Button>
-        </div>
+          </Link>
+        </Button>
+        <Button className="gap-2" onClick={onAddEntry}>
+          <Plus className={ICON_SIZE_SMALL_CLASS} />
+          Add Transaction
+        </Button>
       </div>
     </CardContent>
   </Card>
 );
 
-// Main component
 const CASH_FLOW_PAGE = () => {
   const {
     data: apiData = [],
@@ -368,25 +352,21 @@ const CASH_FLOW_PAGE = () => {
     isLoading,
     isFetching,
   } = useUserCashFlows();
-  const { mutate: deleteCashFlow } = useUserCashFlowDelete();
+  const { mutate: deleteCashFlow } = useDeleteUserCashFlow();
   const router = useRouter();
 
-  const cashFlows = mapApiDataToCashFlowEntry(apiData);
-  const stats = cashFlows.length > 0 ? calculateStats(cashFlows) : null;
+  const cashFlowData = mapApiDataToCashFlowEntry(apiData);
+  const stats = cashFlowData.length > 0 ? calculateStats(cashFlowData) : null;
 
   const handleAddEntry = () => router.push('/app/finance/cash-flow/create');
-
-  const additionalActions = (
-    <Button className="gap-2" variant="outline">
-      <Filter className={ICON_SIZE_SMALL_CLASS} />
-      Advanced Filters
-    </Button>
-  );
 
   const renderStats = stats ? () => <CashFlowStats stats={stats} /> : undefined;
 
   const renderTable = () => (
-    <CashFlowTable cashFlows={cashFlows} deleteCashFlow={deleteCashFlow} />
+    <CashFlowTable
+      cashFlowData={cashFlowData}
+      deleteCashFlow={deleteCashFlow}
+    />
   );
 
   const renderEmptyState = () => (
@@ -399,8 +379,7 @@ const CASH_FLOW_PAGE = () => {
 
   return (
     <EntityPageWrapper
-      additionalActions={additionalActions}
-      data={cashFlows}
+      data={cashFlowData}
       description="Monitor your financial health by tracking all incoming revenue and outgoing expenses over time."
       entityNamePlural="Cash Flow Transactions"
       entityNameSingular="Transaction"

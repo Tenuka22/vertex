@@ -82,7 +82,11 @@ export async function getUserBusinessProfile() {
     .then((v) => v[0]);
 
   if (!businessData) {
-    throw new Error('No Business profile found');
+    const business = await createUpdateBusinessProfile({});
+
+    if (!business) {
+      throw new Error('No Business profile found');
+    }
   }
   return businessData;
 }

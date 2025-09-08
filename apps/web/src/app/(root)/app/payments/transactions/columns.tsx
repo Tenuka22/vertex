@@ -2,6 +2,7 @@ import type { transactions } from '@repo/db/schema/primary';
 import type { ColumnDef } from '@tanstack/react-table';
 import {
   ArrowDownCircle,
+  ArrowRightCircle,
   ArrowUpCircle,
   Calendar,
   DollarSign,
@@ -80,7 +81,7 @@ export const getColumns = ({
           className="text-secondary-foreground hover:text-primary"
           variant="link"
         >
-          <Link href={`/admin/transactions/${row.original.id}`}>
+          <Link href={`/app/transactions/${row.original.id}`}>
             <ExternalLink className="mr-2 h-4 w-4" />
             <span className="font-mono text-sm">
               {row.original.id.substring(0, TRANSACTION_ID_DISPLAY_LENGTH)}
@@ -111,17 +112,20 @@ export const getColumns = ({
         let displayText: string = type;
 
         switch (type) {
-          case 'PAYMENT':
+          case 'INCOME':
             Icon = ArrowDownCircle;
             variant = 'default';
             displayText = 'Incoming';
             break;
-          case 'PAYOUT':
+          case 'EXPENSE':
             Icon = ArrowUpCircle;
             variant = 'secondary';
             displayText = 'Outgoing';
             break;
           default:
+            Icon = ArrowRightCircle;
+            variant = 'secondary';
+            displayText = 'Outgoing';
             break;
         }
 
@@ -150,7 +154,7 @@ export const getColumns = ({
       ),
       cell: ({ row }) => {
         const amount = Number.parseFloat(row.original.amount);
-        const isIncoming = row.original.type === 'PAYMENT';
+        const isIncoming = row.original.type === 'INCOME';
         return (
           <div
             className={`flex items-center gap-1 font-semibold tabular-nums ${
@@ -325,13 +329,13 @@ export const getColumns = ({
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem asChild>
-                <Link href={`/admin/transactions/${row.original.id}`}>
+                <Link href={`/app/transactions/${row.original.id}`}>
                   <ExternalLink className="mr-2 h-4 w-4" />
                   View Details
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
-                <Link href={`/admin/transactions/${row.original.id}/edit`}>
+                <Link href={`/app/transactions/${row.original.id}/edit`}>
                   Edit Transaction
                 </Link>
               </DropdownMenuItem>

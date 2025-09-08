@@ -43,7 +43,7 @@ export function DataTableToolbar<TData>({
       role="toolbar"
       {...props}
     >
-      <div className="flex flex-1 flex-wrap items-center gap-2">
+      <div className="flex w-full flex-wrap items-center gap-2">
         {columns.map((column) => (
           <DataTableToolbarFilter column={column} key={column.id} />
         ))}

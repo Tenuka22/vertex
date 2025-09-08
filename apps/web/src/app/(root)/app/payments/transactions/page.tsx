@@ -1,5 +1,6 @@
 'use client';
 
+import type { Transaction } from '@repo/db/schema/primary';
 import {
   ArrowDownCircle,
   ArrowUpCircle,
@@ -27,22 +28,6 @@ const ICON_SIZE_SMALL_CLASS = 'h-4 w-4';
 const PERCENTAGE_MULTIPLIER = 100;
 const MIN_TRANSACTIONS = 1;
 
-type TransactionApiData = {
-  id: string;
-  businessProfileId: string;
-  paymentMethodId: string | null;
-  expenseCategoryId: string | null;
-  type: 'PAYMENT' | 'PAYOUT';
-  amount: string;
-  description: string | null;
-  reference: string | null;
-  transactionDate: Date;
-  createdAt: Date;
-  updatedAt: Date;
-};
-
-type TransactionEntry = TransactionApiData;
-
 type TransactionStats = {
   totalTransactions: number;
   incomingTransactions: number;
@@ -62,23 +47,21 @@ type StatsCardProps = {
   badge?: string;
 };
 
-const mapApiDataToTransactionEntry = (
-  data: TransactionApiData[]
-): TransactionEntry[] => {
+const mapApiDataToTransactionEntry = (data: Transaction[]): Transaction[] => {
   return data.map((item) => ({
     ...item,
   }));
 };
 
 const calculateTransactionStats = (
-  transactions: TransactionEntry[]
+  transactions: Transaction[]
 ): TransactionStats => {
   const totalTransactions = transactions.length;
   const incomingTransactions = transactions.filter(
-    (t) => t.type === 'PAYMENT'
+    (t) => t.type === 'INCOME'
   ).length;
   const outgoingTransactions = transactions.filter(
-    (t) => t.type === 'PAYOUT'
+    (t) => t.type !== 'INCOME'
   ).length;
 
   const totalAmount = transactions.reduce(
@@ -236,7 +219,7 @@ const TransactionTable = ({
   transactions,
   deleteTransaction,
 }: {
-  transactions: TransactionEntry[];
+  transactions: Transaction[];
   deleteTransaction: (params: { id: string }) => void;
 }) => (
   <div className="space-y-4">

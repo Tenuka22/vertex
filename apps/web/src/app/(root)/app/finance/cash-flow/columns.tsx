@@ -4,10 +4,12 @@ import {
   ArrowDownCircle,
   ArrowUpCircle,
   Calendar,
+  Copy,
   DollarSign,
-  ExternalLink,
   Hash,
   MoreHorizontal,
+  Pen,
+  X,
 } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from 'sonner';
@@ -23,7 +25,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -33,7 +34,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
-// Constants
 const TRANSACTION_ID_DISPLAY_LENGTH = 12;
 const ID_SUBSTRING_LENGTH = 8;
 
@@ -78,21 +78,14 @@ export const getColumns = ({
         <DataTableColumnHeader column={column} title="Transaction ID" />
       ),
       cell: ({ row }) => (
-        <Button
-          asChild
-          className="text-secondary-foreground hover:text-primary"
-          variant="link"
-        >
-          <Link href={`/admin/transactions/${row.original.id}`}>
-            <ExternalLink className="mr-2 h-4 w-4" />
-            <span className="font-mono text-sm">
-              {row.original.transactionId.substring(
-                0,
-                TRANSACTION_ID_DISPLAY_LENGTH
-              )}
-              ...
-            </span>
-          </Link>
+        <Button variant="ghost">
+          <span className="font-mono text-sm">
+            {row.original.transactionId.substring(
+              0,
+              TRANSACTION_ID_DISPLAY_LENGTH
+            )}
+            ...
+          </span>
         </Button>
       ),
       meta: {
@@ -112,14 +105,13 @@ export const getColumns = ({
       cell: ({ row }) => {
         const direction = row.original.direction;
         const Icon = direction === 'INCOMING' ? ArrowDownCircle : ArrowUpCircle;
-        const variant = direction === 'INCOMING' ? 'default' : 'secondary';
         const displayText = direction === 'INCOMING' ? 'Money In' : 'Money Out';
 
         return (
-          <Badge className="gap-1 font-medium" variant={variant}>
-            <Icon className="size-3" />
+          <div className="flex size-full items-center justify-start gap-2">
+            <Icon className="size-4" />
             {displayText}
-          </Badge>
+          </div>
         );
       },
       meta: {
@@ -295,18 +287,56 @@ export const getColumns = ({
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem asChild>
-                <Link href={`/admin/transactions/${row.original.id}`}>
-                  <ExternalLink className="mr-2 h-4 w-4" />
-                  View Full Details
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href={`/admin/transactions/${row.original.id}/edit`}>
+                <Link
+                  href={`/app/transactions/${row.original.transactionId}/edit`}
+                >
+                  <Pen className="mr-2 h-4 w-4" />
                   Edit Transaction
                 </Link>
               </DropdownMenuItem>
+
+              <DropdownMenuItem
+                onClick={async () => {
+                  await navigator.clipboard.writeText(
+                    row.original.transactionId
+                  );
+                  toast.success('Transaction ID copied!');
+                }}
+              >
+                <Copy className="mr-2 h-4 w-4" />
+                Copy Transaction ID
+              </DropdownMenuItem>
+
+              <DropdownMenuItem
+                onClick={async () => {
+                  await navigator.clipboard.writeText(row.original.amount);
+                  toast.success('Transaction amount copied!');
+                }}
+              >
+                <DollarSign className="mr-2 h-4 w-4" />
+                Copy Amount
+              </DropdownMenuItem>
+
+              <DropdownMenuItem
+                onClick={async () => {
+                  const date = new Date(
+                    row.original.flowDate
+                  ).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric',
+                  });
+                  await navigator.clipboard.writeText(date);
+                  toast.success('Transaction date copied!');
+                }}
+              >
+                <Calendar className="mr-2 h-4 w-4" />
+                Copy Transaction Date
+              </DropdownMenuItem>
+
               <AlertDialogTrigger asChild>
                 <DropdownMenuItem variant="destructive">
+                  <X className="mr-2 h-4 w-4" />
                   Delete Transaction
                 </DropdownMenuItem>
               </AlertDialogTrigger>

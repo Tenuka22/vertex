@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import {
   deleteBalanceSheetItem,
   getUserBalanceSheetItems,
@@ -9,6 +9,7 @@ import {
   deleteCashFlow,
   getUserCashFlows,
 } from '@/actions/cash-flows';
+import { queryClient } from '@/components/providers/providers';
 
 export const useUserBudgets = () =>
   useQuery({
@@ -17,7 +18,6 @@ export const useUserBudgets = () =>
   });
 
 export const useUserBudgetDelete = () => {
-  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (params: { id: string }) => await deleteBudget(params.id),
     onSuccess: () => {
@@ -34,14 +34,18 @@ export const useUserCashFlows = () =>
     queryKey: ['user', 'cashFlows'],
   });
 
-export const useUserCashFlowDelete = () =>
+export const useDeleteUserCashFlow = () =>
   useMutation({
     mutationFn: async (params: { id: string }) =>
       await deleteCashFlow(params.id),
+    onSuccess: () =>
+      queryClient.invalidateQueries({
+        queryKey: ['user', 'cashFlows'],
+      }),
     mutationKey: ['user', 'cashFlows', 'delete'],
   });
 
-export const useUserCashFlowAdd = () =>
+export const useAddUserCashFlow = () =>
   useMutation({
     mutationFn: createUpdateCashFlow,
     mutationKey: ['user', 'cashFlows', 'add'],
@@ -54,7 +58,6 @@ export const useUserBalanceSheets = () =>
   });
 
 export const useUserBalanceSheetDelete = () => {
-  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (params: { id: string }) =>
       await deleteBalanceSheetItem(params.id),
