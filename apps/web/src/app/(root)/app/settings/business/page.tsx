@@ -5,27 +5,23 @@ import type {
 } from '@repo/db/schema/primary';
 import {
   Activity,
-  BarChart3,
   Book,
   Building2,
   Calendar,
   Clock,
   CreditCard,
   FileText,
-  Filter,
   Globe,
   Linkedin,
   Mail,
   Palette,
   Phone,
-  Plus,
   Shield,
   Target,
   Twitter,
   Users,
 } from 'lucide-react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useMemo } from 'react';
 import { BusinessInformationForm } from '@/components/business/business-information-form';
 import { BusinessProfileForm } from '@/components/business/business-profile-form';
@@ -42,7 +38,6 @@ import {
 } from '@/hooks/business';
 
 const ICON_SIZE_CLASS = 'h-8 w-8';
-const ICON_SIZE_SMALL_CLASS = 'h-4 w-4';
 
 type BusinessData = BusinessProfile & BusinessInformation;
 type PartialBusinessData = Partial<BusinessProfile> &
@@ -545,10 +540,10 @@ const BusinessDetails = ({ business }: { business: PartialBusinessData }) => (
   </div>
 );
 
-const BusinessEmptyState = ({ onAddEntry }: { onAddEntry: () => void }) => (
+const BusinessEmptyState = () => (
   <Card className="border-2 border-dashed shadow-sm transition-all duration-200 hover:border-primary/50 hover:shadow-md">
-    <CardContent className="py-16 text-center">
-      <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full border border-primary/10 bg-gradient-to-br from-primary/10 to-primary/5">
+    <CardContent className="py-4 text-center">
+      <div className="mx-auto mb-2 flex h-20 w-20 items-center justify-center rounded-full border border-primary/10 bg-gradient-to-br from-primary/10 to-primary/5">
         <Building2 className="h-10 w-10 text-primary" />
       </div>
       <H2 className="mb-3 font-semibold text-xl">
@@ -559,35 +554,7 @@ const BusinessEmptyState = ({ onAddEntry }: { onAddEntry: () => void }) => (
         business profile. Monitor key information, track contacts, and analyze
         performance to make better business decisions.
       </P>
-      <Button className="gap-2 px-6" onClick={onAddEntry} size="lg">
-        <Plus className={ICON_SIZE_SMALL_CLASS} />
-        Create Business Profile
-      </Button>
-    </CardContent>
-  </Card>
-);
-
-const BusinessQuickActions = ({ onAddEntry }: { onAddEntry: () => void }) => (
-  <Card className="border-dashed transition-all duration-200 hover:border-primary/20 hover:shadow-sm">
-    <CardContent className="p-6">
-      <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
-        <div className="text-center md:text-left">
-          <H2 className="mb-2 font-semibold text-xl">Quick Actions</H2>
-          <P className="text-muted-foreground">
-            Efficiently manage your business profile and generate insights
-          </P>
-        </div>
-        <div className="flex gap-3">
-          <Button className="gap-2" variant="outline">
-            <BarChart3 className={ICON_SIZE_SMALL_CLASS} />
-            View Analytics
-          </Button>
-          <Button className="gap-2" onClick={onAddEntry}>
-            <Plus className={ICON_SIZE_SMALL_CLASS} />
-            Edit Profile
-          </Button>
-        </div>
-      </div>
+      <BusinessProfileForm />
     </CardContent>
   </Card>
 );
@@ -619,16 +586,6 @@ const COMPANY_PAGE = () => {
 
   const stats = business.companyName ? calculateBusinessStats(business) : null;
 
-  const router = useRouter();
-  const handleAddEntry = () => router.push('/app/settings/business/edit');
-
-  const additionalActions = (
-    <Button className="gap-2" variant="outline">
-      <Filter className={ICON_SIZE_SMALL_CLASS} />
-      Advanced Filters
-    </Button>
-  );
-
   const renderStats = stats ? () => <BusinessStats stats={stats} /> : undefined;
 
   const renderDetails = () => (
@@ -647,17 +604,10 @@ const COMPANY_PAGE = () => {
     </div>
   );
 
-  const renderEmptyState = () => (
-    <BusinessEmptyState onAddEntry={handleAddEntry} />
-  );
-
-  const renderQuickActions = () => (
-    <BusinessQuickActions onAddEntry={handleAddEntry} />
-  );
+  const renderEmptyState = () => <BusinessEmptyState />;
 
   return (
     <EntityPageWrapper
-      additionalActions={additionalActions}
       data={business.companyName ? [business] : []}
       description="Manage your business profile, including company information, mission, vision, contact details, and settings."
       entityNamePlural="Business Profile"
@@ -665,13 +615,11 @@ const COMPANY_PAGE = () => {
       error={hasError}
       isFetching={isLoading}
       isLoading={isLoading}
-      onAddEntry={handleAddEntry}
       onRefetch={() => {
         profileRefetch();
         infoRefetch();
       }}
       renderEmptyState={renderEmptyState}
-      renderQuickActions={renderQuickActions}
       renderStats={renderStats}
       renderTable={renderDetails}
       title="Business Profile Management"

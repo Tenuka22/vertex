@@ -3,7 +3,7 @@ CREATE TYPE "public"."budget_category" AS ENUM('MARKETING', 'OPERATIONS', 'PAYRO
 CREATE TYPE "public"."cash_flow_direction" AS ENUM('INCOMING', 'OUTGOING');--> statement-breakpoint
 CREATE TYPE "public"."expenseCategoryEnum" AS ENUM('VEHICLE', 'HOUSING', 'SALES', 'FOOD', 'SHOPPING', 'ENTERTAINMENT', 'EDUCATION', 'HEALTHCARE', 'SUPPLIES', 'OPTIONAL');--> statement-breakpoint
 CREATE TYPE "public"."payment_method" AS ENUM('BANK', 'CASH', 'CARD_CREDIT', 'DIGITAL_WALLET', 'OTHER');--> statement-breakpoint
-CREATE TYPE "public"."transaction_type" AS ENUM('PAYMENT', 'PAYOUT');--> statement-breakpoint
+CREATE TYPE "public"."transaction_type" AS ENUM('INCOME', 'EXPENSE', 'TRANSFER');--> statement-breakpoint
 CREATE TABLE "balance_sheet_items" (
 	"id" text PRIMARY KEY NOT NULL,
 	"business_profile_id" text NOT NULL,
@@ -266,7 +266,7 @@ CREATE TABLE "account" (
 	"refresh_token_expires_at" timestamp,
 	"scope" text,
 	"password" text,
-	"created_at" timestamp NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp NOT NULL
 );
 --> statement-breakpoint
@@ -274,7 +274,7 @@ CREATE TABLE "session" (
 	"id" text PRIMARY KEY NOT NULL,
 	"expires_at" timestamp NOT NULL,
 	"token" text NOT NULL,
-	"created_at" timestamp NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp NOT NULL,
 	"ip_address" text,
 	"user_agent" text,
@@ -286,10 +286,10 @@ CREATE TABLE "user" (
 	"id" text PRIMARY KEY NOT NULL,
 	"name" text NOT NULL,
 	"email" text NOT NULL,
-	"email_verified" boolean NOT NULL,
+	"email_verified" boolean DEFAULT false NOT NULL,
 	"image" text,
-	"created_at" timestamp NOT NULL,
-	"updated_at" timestamp NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL,
 	CONSTRAINT "user_email_unique" UNIQUE("email")
 );
 --> statement-breakpoint
@@ -298,8 +298,8 @@ CREATE TABLE "verification" (
 	"identifier" text NOT NULL,
 	"value" text NOT NULL,
 	"expires_at" timestamp NOT NULL,
-	"created_at" timestamp,
-	"updated_at" timestamp
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 ALTER TABLE "balance_sheet_items" ADD CONSTRAINT "balance_sheet_items_business_profile_id_business_profile_id_fk" FOREIGN KEY ("business_profile_id") REFERENCES "public"."business_profile"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint

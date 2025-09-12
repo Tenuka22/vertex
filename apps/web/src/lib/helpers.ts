@@ -72,3 +72,9 @@ const ExpenseCategoryMeta: Record<
 
 export const getCategoryMeta = (categry: ExpenseCategory) =>
   ExpenseCategoryMeta[categry.name];
+
+export function withSafeDefaults<T extends Record<string, unknown>>(data?: T) {
+  return Object.fromEntries(
+    Object.entries(data ?? {}).filter(([_, v]) => v !== undefined)
+  ) as T;
+}

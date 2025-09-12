@@ -44,7 +44,7 @@ type EntityPageWrapperProps = {
   isFetching: boolean;
   error: ExtendedError | null;
   onRefetch: () => void;
-  onAddEntry: () => void;
+  onAddEntry?: () => void;
   entityNameSingular: string;
   entityNamePlural: string;
   additionalActions?: React.ReactNode;
@@ -176,11 +176,11 @@ const DefaultEmptyState = ({
   onAddEntry,
   entityNameSingular,
 }: {
-  onAddEntry: () => void;
+  onAddEntry?: () => void;
   entityNameSingular: string;
 }) => (
   <Card className="border-2 border-dashed shadow-md transition-all duration-200 hover:shadow-lg">
-    <CardContent className="py-12 text-center">
+    <CardContent className="py-4 text-center">
       <H2 className="mb-2 font-semibold text-xl">
         No {entityNameSingular} Data Yet
       </H2>
@@ -293,9 +293,11 @@ const EntityPageWrapper = ({
             Refresh
           </Button>
           {additionalActions}
-          <Button className="gap-2" onClick={onAddEntry}>
-            <Plus className={ICON_SIZE_SMALL} /> Add {entityNameSingular}
-          </Button>
+          {onAddEntry && (
+            <Button className="gap-2" onClick={onAddEntry}>
+              <Plus className={ICON_SIZE_SMALL} /> Add {entityNameSingular}
+            </Button>
+          )}
         </div>
       </div>
       <Separator />

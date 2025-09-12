@@ -8,6 +8,7 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import type { z } from 'zod';
 import { useUpdateCreateUserBusinessProfile } from '@/hooks/business';
+import { withSafeDefaults } from '@/lib/helpers';
 import { Loader } from '../global/loader';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardHeader } from '../ui/card';
@@ -479,13 +480,13 @@ export const BusinessProfileForm = <TDefaultData extends { id: string }>({
       isActive: true,
       twitter: '',
       linkedin: '',
-      ...defaultData,
+      ...withSafeDefaults(defaultData),
     } satisfies FormValues as FormValues,
     validators: { onSubmit: businessProfileInsertSchema },
     onSubmit: async ({ value }) => {
       try {
         await updateCreateBusinessProfile({
-          businessData: value,
+          ...value,
         });
         toast.success(`${data?.companyName} Business profile created!`);
       } catch (error) {

@@ -22,7 +22,7 @@ const getUserId = async () => {
 };
 
 export async function createUpdateBusinessProfile(
-  businessData: z.infer<typeof BusinessProfileInsert.omit<{ userId: true }>>
+  businessData: Omit<z.infer<typeof BusinessProfileInsert>, 'userId'>
 ) {
   const userId = await getUserId();
   const providedBusiness = BusinessProfileInsert.omit({ userId: true }).parse(
@@ -82,7 +82,12 @@ export async function getUserBusinessProfile() {
     .then((v) => v[0]);
 
   if (!businessData) {
-    const business = await createUpdateBusinessProfile({});
+    const business = await createUpdateBusinessProfile({
+      companyName: '',
+      email: '',
+      linkedin: '',
+      twitter: '',
+    });
 
     if (!business) {
       throw new Error('No Business profile found');
